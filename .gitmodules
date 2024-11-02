@@ -1,0 +1,3 @@
+[submodule "NaughtyAttributes"]
+	path = NaughtyAttributes
+	url = git@github.com:TheWizardsCode/NaughtyAttributes.git
