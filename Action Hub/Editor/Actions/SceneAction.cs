@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 
 namespace WizardsCode.ActionHubEditor
 {
-    [CreateAssetMenu(fileName = "New Scene Action", menuName = "Wizards Code/Action Hub/Action/Scene Action")]
+    [CreateAssetMenu(fileName = "New Scene Action", menuName = "Wizards Code/Action Hub/Scene")]
     public class SceneAction : Action
     {
         [SerializeField, Tooltip("The scene to operate on."), Scene]
@@ -22,7 +22,9 @@ namespace WizardsCode.ActionHubEditor
         public string Scene { get => m_Scene; set => m_Scene = value; }
         public bool IsAdditive { get => m_IsAdditive; set => m_IsAdditive = value; }
 
-        internal override void OnStartGUI()
+        string newScene;
+
+        protected override void OnCustomGUI()
         {
             // Check if the scene is present in the build settings
             bool sceneInBuildSettings = false;
@@ -45,6 +47,50 @@ namespace WizardsCode.ActionHubEditor
             {
                 OnValidSceneGUI(scenePath);
             }
+        }
+
+        internal override void OnCreateGUI()
+        {
+            GUILayout.BeginHorizontal("box");
+            {
+                EditorGUILayout.LabelField("Create Scene Action", GUILayout.Width(CreateLabelWidth));
+
+                // Dropdown to select from scenes in build settings
+                List<string> sceneNames = new List<string>();
+                foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+                {
+                    sceneNames.Add(System.IO.Path.GetFileNameWithoutExtension(scene.path));
+                }
+
+                int selectedSceneIndex = sceneNames.IndexOf(newScene);
+                selectedSceneIndex = EditorGUILayout.Popup("Select scene to add", selectedSceneIndex, sceneNames.ToArray(), GUILayout.MinWidth(300));
+
+                if (selectedSceneIndex >= 0 && selectedSceneIndex < sceneNames.Count)
+                {
+                    newScene = sceneNames[selectedSceneIndex];
+                }
+
+                // Disable the button if newItem is invalid
+                EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(newScene));
+                {
+                    if (GUILayout.Button("Add Scene", GUILayout.Width(100)))
+                    {
+                        // create a new ToDoAction and save it to the AssetDatabase
+                        SceneAction newAction = ScriptableObject.CreateInstance<SceneAction>();
+                        newAction.name = newScene;
+                        newAction.Scene = newScene;
+                        newAction.Category = Category;
+
+                        newAction.OnSaveToAssetDatabase();
+
+                        newScene = string.Empty;
+
+                        ActionHubWindow.RefreshActions();
+                    }
+                }
+                EditorGUI.EndDisabledGroup();
+            }
+            GUILayout.EndHorizontal();
         }
 
         private void OnValidSceneGUI(string scenePath)
@@ -120,7 +166,7 @@ namespace WizardsCode.ActionHubEditor
             if (Category == null)
             {
                 Category = Action.ResourceLoad<ActionCategory>("Scene");
-                ActionHubWindow.RefreshAssets();
+                ActionHubWindow.RefreshActions();
             }
         }
     }

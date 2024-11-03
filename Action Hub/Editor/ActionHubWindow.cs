@@ -1,10 +1,10 @@
-using NUnit.Framework;
-using NUnit.Framework.Internal;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using System;
+using Object = UnityEngine.Object;
+using System.Reflection;
 
 namespace WizardsCode.ActionHubEditor
 {
@@ -15,37 +15,71 @@ namespace WizardsCode.ActionHubEditor
     public class ActionHubWindow : EditorWindow
     {
         private List<Action> m_Actions = new List<Action>();
+        private List<Action> m_ActionTemplates = new List<Action>();
         private List<ActionCategory> m_Categories = new List<ActionCategory>();
         private ActionCategory m_DefaultCategory;
-        private static ActionHubWindow window;
+        private static ActionHubWindow m_Window;
         private Vector2 m_MainWindowScrollPosition;
 
         [SerializeField]
         private List<Object> lastSelectedItems = new List<Object>();
         [SerializeField]
         private List<Object> accessedFolders = new List<Object>();
-        private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
 
+        private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
+        /// <summary>
+        /// The window instance, use this whenver you need to access the window in code.
+        /// </summary>
+        private static ActionHubWindow Window {
+            get
+            {
+                if (m_Window == null)
+                {
+                    m_Window = GetWindow<ActionHubWindow>("Action Hub");
+                }
+                return m_Window;
+            }
+        }
+
+        public static float ContentWidth => EditorGUIUtility.currentViewWidth - 20;
+
+        /// <summary>
+        /// Called when the window is enabled. This is used to register for events and initialise the data.
+        /// </summary>
         private void OnEnable()
         {
             Selection.selectionChanged += OnSelectionChanged;
             EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemGUI;
 
-            LoadActions();
+            LoadAllData();
 
             m_DefaultCategory = ResourceLoad<ActionCategory>("Default");
             if (m_DefaultCategory == null)
             {
                 Debug.LogError("Default category not found!");
             }
+
+            m_Window = this;
         }
 
+        /// <summary>
+        /// Called when the window is disabled. This is used to unregister for events.
+        /// </summary>    
         private void OnDisable()
         {
             Selection.selectionChanged -= OnSelectionChanged;
             EditorApplication.projectWindowItemOnGUI -= OnProjectWindowItemGUI;
+
+            if (m_Window == this)
+            {
+                m_Window = null;
+            }
         }
 
+        /// <summary>
+        /// A handler for the OnSelectionChanged event. This is used to record the last 10 items and folders that were selected.
+        /// These are then displayed in the Action Hub window for easy access.
+        /// </summary>
         private void OnSelectionChanged()
         {
             if (Selection.objects.Length == 0)
@@ -66,11 +100,11 @@ namespace WizardsCode.ActionHubEditor
                 lastSelectedItems.Remove(selectedObject);
             }
 
-            lastSelectedItems.Insert(0, selectedObject);
+            lastSelectedItems.Add(selectedObject);
 
             if (lastSelectedItems.Count > 10)
             {
-                lastSelectedItems.RemoveAt(10);
+                lastSelectedItems.RemoveAt(0);
             }
 
             EditorUtility.SetDirty(this);
@@ -105,23 +139,63 @@ namespace WizardsCode.ActionHubEditor
         [MenuItem("Tools/Wizards Code/Action Hub")]
         public static void ShowWindow()
         {
-            window = GetWindow<ActionHubWindow>("Action Hub");
-            window.minSize = new Vector2(500, window.minSize.y);
-            window.maxSize = new Vector2(window.maxSize.x, window.maxSize.y);
+            if (m_Window == null)
+            {
+                m_Window = GetWindow<ActionHubWindow>("Action Hub");
+            }
+            else
+            {
+                m_Window.Focus();
+            }
+            m_Window.minSize = new Vector2(500, m_Window.minSize.y);
+            m_Window.maxSize = new Vector2(m_Window.maxSize.x, m_Window.maxSize.y);
         }
 
-        private void LoadActions()
+        /// <summary>
+        /// Force a repaint of the window
+        /// </summary>
+        public static void ForceRepaint()
         {
+            Window.Repaint();
+        }
+
+        /// <summary>
+        /// Load all Actions and Action Templates available to this Action Hub.
+        /// 
+        /// Actions are items that the user is working with.
+        /// Action Templates define what the user can create in the Action Hub, and where.
+        /// 
+        /// Action Templates are instances of an Action Scriptable Object (or subclas) with default settings.
+        /// One of these default settings is the category that the Action belongs to. This is used to determine
+        /// where to place the Create UI for the Action in the Action Hub. That is, the create UI will be
+        /// placed in the category that the Action Template is assigned to.
+        /// 
+        /// Note, the user may also be able to create some Actions in the editor using the Create Asset menu itens.
+        /// </summary>
+        private void LoadAllData()
+        {
+            m_ActionTemplates.Clear();
             m_Actions = new List<Action>(Resources.LoadAll<Action>(""));
 
             // Load all ActionCategory assets
             m_Categories = new List<ActionCategory>(Resources.LoadAll<ActionCategory>(""));
+            m_Categories.Sort((a, b) =>
+            {
+                int priorityComparison = a.SortOrder.CompareTo(b.SortOrder);
+                if (priorityComparison != 0)
+                {
+                    return priorityComparison;
+                }
+
+                return a.DisplayName.CompareTo(b.DisplayName);
+            });
+
             Dictionary<string, int> categorySortOrder = new Dictionary<string, int>();
             foreach (var category in m_Categories)
             {
                 categorySortOrder[category.DisplayName] = category.SortOrder;
             }
-
+            
             // Sort actions by priority, then by name, and then by category sort order
             m_Actions.Sort((a, b) =>
             {
@@ -145,15 +219,28 @@ namespace WizardsCode.ActionHubEditor
 
                 return categoryAOrder.CompareTo(categoryBOrder);
             });
+
+            for (int i = m_Actions.Count - 1; i >= 0; i--)
+            {
+                if (m_Actions[i].name.ToLower().EndsWith("template"))
+                {
+                    m_ActionTemplates.Add(m_Actions[i]);
+                    m_Actions.RemoveAt(i);
+                }
+            }
         }
 
         void OnGUI()
         {
+            if (GUILayout.Button("Refresh"))
+            {
+                RefreshActions();
+            }
+
             m_MainWindowScrollPosition = GUILayout.BeginScrollView(m_MainWindowScrollPosition, GUILayout.Width(position.width), GUILayout.ExpandHeight(true));
             {
-                OnActionCategoriesGUI();
-
                 OnRecentlySelectedGUI();
+                OnActionCategoriesGUI();
             }
             GUILayout.EndScrollView();
         }
@@ -161,7 +248,7 @@ namespace WizardsCode.ActionHubEditor
 
         private void OnRecentlySelectedGUI()
         {
-            GUILayout.BeginHorizontal();
+            GUILayout.BeginHorizontal("Box", GUILayout.Width(ContentWidth));
 
             GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
             {
@@ -180,12 +267,18 @@ namespace WizardsCode.ActionHubEditor
                         {
                             CreateClickableLabel(folder.name, AssetDatabase.GetAssetPath(folder), folder);
                         }
+                        else
+                        {
+                            accessedFolders.RemoveAt(i);
+                        }
 
                         Separator(2);
                     }
                 }
             }
             GUILayout.EndVertical();
+
+            GUILayout.Space(10); // Add space between the two vertical sections
 
             GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
             {
@@ -197,7 +290,7 @@ namespace WizardsCode.ActionHubEditor
                 }
                 else
                 {
-                    for (int i = 0; i < lastSelectedItems.Count; i++)
+                    for (int i = lastSelectedItems.Count - 1; i >= 0; i--)
                     {
                         Object item = lastSelectedItems[i];
                         if (item != null)
@@ -208,22 +301,20 @@ namespace WizardsCode.ActionHubEditor
                                 sceneAction.name = item.name;
                                 sceneAction.Scene = ((SceneAsset)item).name;
 
-                                EditorGUILayout.BeginHorizontal();
-                                sceneAction.OnStartGUI();
-                                sceneAction.OnEndGUI();
-                                EditorGUILayout.EndHorizontal();
+                                sceneAction.OnGUI();
                             }
                             else if (item is Action)
                             {
-                                EditorGUILayout.BeginHorizontal();
-                                ((Action)item).OnStartGUI();
-                                ((Action)item).OnEndGUI();
-                                EditorGUILayout.EndHorizontal();
+                                ((Action)item).OnGUI();
                             }
                             else
                             {
                                 CreateClickableLabel(item.name, AssetDatabase.GetAssetPath(item), item);
                             }
+                        }
+                        else
+                        {
+                            lastSelectedItems.RemoveAt(i);
                         }
 
                         Separator(2);
@@ -235,65 +326,49 @@ namespace WizardsCode.ActionHubEditor
             GUILayout.EndHorizontal();
         }
 
+
         private void OnActionCategoriesGUI()
         {
-            ActionCategory currentCategory = null;
+            List<Action> createAllowed = new List<Action>();
+            List<Action> categoryActions = new List<Action>();
+
             foreach (ActionCategory category in m_Categories)
             {
-                bool categoryHasActions = false;
+                createAllowed.Clear();
+                categoryActions.Clear();
+
+                // Find all the actions templates that allow creation in this category
+                foreach (Action action in m_ActionTemplates)
+                {
+                    if (action.Category == category)
+                    {
+                        createAllowed.Add(action);
+                    }
+                }
+
+                // Find all the actions that are in this category
                 foreach (Action action in m_Actions)
                 {
+
                     if (action.Category == category && action.IncludeInHub)
                     {
-                        categoryHasActions = true;
-                        break;
+                        categoryActions.Add(action);
                     }
                 }
 
-                if (categoryHasActions || category.AlwaysShowInHub)
+                // If there are actions in this category, or the category is always shown in the hub, or there are actions that can be created in this category display the category UI
+                if (categoryActions.Count > 0 || category.AlwaysShowInHub || createAllowed.Count > 0)
                 {
-                    if (currentCategory != category)
-                    {
-                        currentCategory?.OnEndGUI();
-                        currentCategory = category;
-                        currentCategory.OnStartGUI();
-                    }
-
-                    foreach (Action action in m_Actions)
-                    {
-                        if (action.Category == category && action.IncludeInHub)
-                        {
-                            GUILayout.BeginHorizontal();
-                            {
-                                EditorGUILayout.BeginHorizontal();
-                                {
-                                    action.OnStartGUI();
-                                    action.OnEndGUI();
-                                }
-                                EditorGUILayout.EndHorizontal();
-                            }
-                            GUILayout.EndHorizontal();
-                        }
-                    }
+                    category.OnActionListGUI(categoryActions, createAllowed);
                 }
             }
-
-            currentCategory?.OnEndGUI(); // we start this in the loop but need to end it here as the last category will not have been swapped out
         }
 
-        public static void RefreshAssets()
+        public static void RefreshActions()
         {
-            if (window == null)
-            {
-                window = GetWindow<ActionHubWindow>("Action Hub");
-            }
-
-            if (window != null)
-            {
-                window.LoadActions();
-                window.OnEnable();
-                window.Repaint();
-            }
+            Window.LoadAllData();
+            Window.OnEnable();
+            Window.Repaint();
         }
 
         private static void Separator(float height = 5)
@@ -326,20 +401,23 @@ namespace WizardsCode.ActionHubEditor
         {
             GUIContent content = new GUIContent(text, tooltip);
             GUIContent objectIcon = EditorGUIUtility.ObjectContent(obj, obj.GetType());
-            
-            Rect labelRect = GUILayoutUtility.GetRect(content, GUI.skin.label, options);
+
+            GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+            labelStyle.normal.background = MakeTex(1, 1, backgroundColour);
+            labelStyle.margin = new RectOffset(10, 10, 0, 0);
+
+            Rect labelRect = GUILayoutUtility.GetRect(content, labelStyle, options);
 
             if (showIcon)
             {
                 Rect iconRect = new Rect(labelRect.x, labelRect.y, labelRect.height, labelRect.height);
-                EditorGUI.DrawRect(iconRect, backgroundColour); 
+                EditorGUI.DrawRect(iconRect, backgroundColour);
                 GUI.Label(iconRect, objectIcon.image);
 
                 labelRect.x += iconRect.width;
             }
 
-            EditorGUI.DrawRect(labelRect, backgroundColour);
-            GUI.Label(labelRect, content);
+            GUI.Label(labelRect, content, labelStyle);
 
             Event e = Event.current;
             if (e.type == EventType.MouseDown && labelRect.Contains(e.mousePosition))
@@ -351,6 +429,7 @@ namespace WizardsCode.ActionHubEditor
                 else if (e.clickCount == 2)
                 {
                     Selection.activeObject = obj;
+                    EditorGUIUtility.PingObject(obj);
                 }
                 e.Use();
             }
@@ -366,7 +445,7 @@ namespace WizardsCode.ActionHubEditor
             CreateClickableLabel(label, tooltip, obj, showIcon, m_HeadingBackgroundColour, options);
         }
 
-        internal static void CreateLabel(string text, string tooltip, Color backgroundColour = default, params GUILayoutOption[] options)
+        internal static void CreateLabel(string text, string tooltip = null, Color backgroundColour = default, params GUILayoutOption[] options)
         {
             GUIContent content = new GUIContent(text, tooltip); 
             Rect labelRect = GUILayoutUtility.GetRect(content, GUI.skin.label, options);
@@ -386,5 +465,33 @@ namespace WizardsCode.ActionHubEditor
             CreateLabel(label, tooltip, m_HeadingBackgroundColour, options);
         }
 
+        /// <summary>
+        /// Show a modal dialog.
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        internal static void ShowConfirmationDialog(string title, string content)
+        {
+            EditorUtility.DisplayDialog(title, content, "OK");
+        }
+
+        internal static void ShowOptionDialog(string title, string content, string option1 = "Yes", string option2 = "No")
+        {
+            EditorUtility.DisplayDialog(title, content, option1, option2);
+        }
+
+        private static Texture2D MakeTex(int width, int height, Color col)
+        {
+            Color[] pix = new Color[width * height];
+            for (int i = 0; i < pix.Length; i++)
+            {
+                pix[i] = col;
+            }
+            Texture2D result = new Texture2D(width, height);
+            result.SetPixels(pix);
+            result.Apply();
+            return result;
+        }
     }
 }

@@ -9,9 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13a4ab82d6a53754f997a77eefaf5646, type: 3}
-  m_Name: TestAction
+  m_Script: {fileID: 11500000, guid: b74ff6232a78db84985e1912e3a0788a, type: 3}
+  m_Name: Quality
   m_EditorClassIdentifier: 
-  m_DisplayName: Test Action
-  m_Description: Doesn't really do anything, just used for testing the system.
-  m_Category: {fileID: 11400000, guid: d4163772d71ea63409e758e5dadd5174, type: 2}
+  m_DisplayName: Quality
+  m_Description: Contains work items to ensure the highest possible quality for the
+    project
+  m_SortOrder: 125
+  m_AlwaysShowInHub: 1
+  m_MaxActionsToShow: 3

@@ -1,56 +1,150 @@
 using NaughtyAttributes;
+using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace WizardsCode.ActionHubEditor
 {
     /// <summary>
-    /// An ActionCategory is a way to group actions in the Action Hub.
+    /// Represents a category of actions in the Action Hub.
     /// This is a simple ScriptableObject that acts like an enum but is more flexible.
     /// To create a new category, create a new instance of this class and it will become
     /// available for selection in your Actions and will be used to group them in the UI.
     /// </summary>
-    [CreateAssetMenu(fileName = "New Action Category", menuName = "Wizards Code/Action Hub/Action Category")]
+    [CreateAssetMenu(fileName = "New Category", menuName = "Wizards Code/Action Hub/Category")]
     public class ActionCategory : ScriptableObject
     {
         [SerializeField, Tooltip("The name of the category as it appears in the Action Hub window.")]
         private string m_DisplayName = "TBD";
+
         [SerializeField, TextArea(2, 5), Tooltip("A description of the category, for displaying in tooltips and detailed views of the category.")]
         private string m_Description = "This category has not been given a description yet.";
+
         [SerializeField, Tooltip("The sort order of this category. Lower numbers appear first.")]
         private int m_SortOrder = 1000;
-        [SerializeField, Tooltip("If this is true then this category will always be shown im the Action Hub, even if there are no actions associated with it. This is useful when the category provides a means for creating new actions from it's GUI.")]
+
+        [SerializeField, Tooltip("If this is true then this category will always be shown in the Action Hub, even if there are no actions associated with it. This is useful when the category provides a means for creating new actions from its GUI.")]
         private bool m_AlwaysShowInHub = false;
 
+        [SerializeField, Tooltip("The maximum number of actions to show in the hub.")]
+        private int m_MaxActionsToShow = 3;
+
+        /// <summary>
+        /// Gets or sets the display name of the category.
+        /// This is the name that will be shown in the Action Hub window.
+        /// </summary>
         public virtual string DisplayName { get => m_DisplayName; set => m_DisplayName = value; }
+
+        /// <summary>
+        /// Gets or sets the description of the category.
+        /// This description is used for displaying tooltips and detailed views of the category.
+        /// </summary>
         public virtual string Description { get => m_Description; set => m_Description = value; }
+
+        /// <summary>
+        /// Gets or sets the sort order of the category.
+        /// Categories with lower sort order values appear first in the Action Hub.
+        /// </summary>
         public virtual int SortOrder { get => m_SortOrder; set => m_SortOrder = value; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this category should always be shown in the hub.
+        /// If true, the category will be shown even if there are no actions associated with it.
+        /// </summary>
         public virtual bool AlwaysShowInHub { get => m_AlwaysShowInHub; set => m_AlwaysShowInHub = value; }
 
-        protected float Width => EditorGUIUtility.currentViewWidth - 20;
+        /// <summary>
+        /// Gets the width to use for the content in this GUI.
+        /// </summary>
+        protected float Width => ActionHubWindow.ContentWidth;
 
-        public void OnStartGUI()
+        bool showAll = false;
+
+        /// <summary>
+        /// Renders the GUI for the action list.
+        /// </summary>
+        /// <param name="activeActions">The list of active actions.</param>
+        /// <param name="activeTemplates">The list of active templates.</param>
+        public void OnActionListGUI(List<Action> activeActions, List<Action> activeTemplates)
         {
-            GUILayout.BeginVertical("box", GUILayout.Width(Width)); // this is ended in OnEndGUI
-
-            GUILayout.BeginVertical();
+            int toShow = 0;
+            if (showAll)
             {
-                ActionHubWindow.CreateClickableHeading(DisplayName, Description, this);
+                toShow = activeActions.Count;
+            }
+            else
+            {
+                // Count the number of actions that should be shown in the hub
+                foreach (Action action in activeActions)
+                {
+                    if (action.IncludeInHub)
+                    {
+                        if (++toShow >= m_MaxActionsToShow)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
 
-                GUILayout.FlexibleSpace();
+            GUILayout.BeginVertical("box", GUILayout.Width(Width));
+            {
+                GUILayout.BeginVertical();
+                {
+                    GUILayout.BeginHorizontal();
+                    {
+                        string showing = activeActions.Count > m_MaxActionsToShow ? $"Showing {m_MaxActionsToShow} of {activeActions.Count} actions" : $"{activeActions.Count} actions";
+                        string label = $"{DisplayName} - {showing}";
+                        ActionHubWindow.CreateClickableHeading(label, Description, this);
 
-                OnActionManagementUI();
+                        if (showAll)
+                        {
+                            if (GUILayout.Button($"Show {m_MaxActionsToShow}", GUILayout.Width(60)))
+                            {
+                                showAll = false;
+                            }
+                        } 
+                        else if (toShow < activeActions.Count)
+                        {
+                            if (GUILayout.Button("Show All", GUILayout.Width(60)))
+                            {
+                                showAll = true;
+                            }
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+
+                    // Display the create experiences for all templates available
+                    foreach (Action createAction in activeTemplates)
+                    {
+                        GUILayout.BeginHorizontal("Box", GUILayout.Width(Width));
+                        {
+                            createAction.OnCreateGUI();
+                        }
+                        GUILayout.EndHorizontal();
+                    }
+
+                    // Show the actions in this category
+                    int shown = 0;
+                    for (int i = 0; shown < toShow; i++)
+                    {
+                        if (activeActions[i].IncludeInHub)
+                        {
+                            GUILayout.BeginHorizontal();
+                            {
+                                activeActions[i].OnGUI();
+                            }
+                            GUILayout.EndHorizontal();
+
+                            shown++;
+                        }
+                    }
+                }
+                GUILayout.EndVertical();
             }
             GUILayout.EndVertical();
-        }
-
-        public virtual void OnActionManagementUI()
-        {
-        }
-
-        public virtual void OnEndGUI()
-        {
-            GUILayout.EndVertical(); // this is started in OnStartGUI
         }
     }
 }

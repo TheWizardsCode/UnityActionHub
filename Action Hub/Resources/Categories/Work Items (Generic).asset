@@ -17,6 +17,7 @@ MonoBehaviour:
     description is available yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &-8827120284829363449
 MonoBehaviour:
@@ -35,6 +36,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &-8008735386906352984
 MonoBehaviour:
@@ -53,6 +55,7 @@ MonoBehaviour:
     description is available yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &-6710002248653965291
 MonoBehaviour:
@@ -71,6 +74,7 @@ MonoBehaviour:
     description is available yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &-6219179445426159656
 MonoBehaviour:
@@ -89,6 +93,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &-4711547228861211192
 MonoBehaviour:
@@ -103,16 +108,25 @@ MonoBehaviour:
   m_Name: Add Auto Actions
   m_EditorClassIdentifier: 
   m_DisplayName: Add Auto Actions
-  m_Description: "When an item is selected in the project window add it to a list
+  m_Description: 'When an item is selected in the project window add it to a list
     of automatically created action items. The most recent 10 (or so) will be displayed,
     while 100 will be retained in memory and can be searched for. These can then
-    include optimized actions for each item. For example:\n\n- [ ] scenes create
-    a scene item, but within the auto's (where it will roll off if not used again)\n-
-    [ ] prefabs offer the option to add it to the scene or to open the prefab. \n-
-    [ ] items within a scene will ping the prefab (if there is one), focus on the
-    item in the scene view\n- [ ] If it is an audio file it can be played\n"
+    include optimized actions for each item. For example:
+
+
+    - [x] scenes create
+    a scene item, but within the auto''s (where it will roll off if not used again)
+
+    -
+    [x] Actions have their default UI shown
+
+    - [ ] If it is an audio file it
+    can be played
+
+'
   m_Category: {fileID: 11400000}
   m_Priority: 100
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &-3613181188091665978
 MonoBehaviour:
@@ -131,6 +145,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 5000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &-3033765514791049484
 MonoBehaviour:
@@ -149,6 +164,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 10
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &-2372262918559616973
 MonoBehaviour:
@@ -167,6 +183,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -177,13 +194,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc49268c28643c749aaff040e42f7a60, type: 3}
-  m_Name: ToDo
+  m_Script: {fileID: 11500000, guid: b74ff6232a78db84985e1912e3a0788a, type: 3}
+  m_Name: Work Items (Generic)
   m_EditorClassIdentifier: 
-  m_DisplayName: To Do
-  m_Description: A simple task management system.
+  m_DisplayName: Work Items (Generic)
+  m_Description: A category foir all work items that are not assigned to a specific
+    deliverable.
   m_SortOrder: 50
   m_AlwaysShowInHub: 1
+  m_MaxActionsToShow: 3
 --- !u!114 &3773372287474568159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,6 +224,7 @@ MonoBehaviour:
     `Priority`.'
   m_Category: {fileID: 11400000}
   m_Priority: 1
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &4077029561529814757
 MonoBehaviour:
@@ -223,7 +243,27 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
+--- !u!114 &4169266409876070574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1f3a191fd1f7494eb7eb879d9e9e122, type: 3}
+  m_Name: Need to refresh every few seconds
+  m_EditorClassIdentifier: 
+  m_DisplayName: Need to refresh every few seconds
+  m_Description: This is a new ToDo item that has been added to the Action Hub. No
+    description is available yet.
+  m_Category: {fileID: 11400000}
+  m_Priority: 100
+  m_ActivateOnUpdateAtStart: 0
+  m_IsComplete: 0
 --- !u!114 &4312082494780872633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -241,6 +281,7 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &5831722884318886707
 MonoBehaviour:
@@ -259,6 +300,26 @@ MonoBehaviour:
     description is avaialble yet.
   m_Category: {fileID: 11400000}
   m_Priority: 1000
+  m_ActivateOnUpdateAtStart: 0
+  m_IsComplete: 1
+--- !u!114 &8085542998371512325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1f3a191fd1f7494eb7eb879d9e9e122, type: 3}
+  m_Name: Double clicking is not working
+  m_EditorClassIdentifier: 
+  m_DisplayName: Double clicking is not working
+  m_Description: This is a new ToDo item that has been added to the Action Hub. No
+    description is available yet.
+  m_Category: {fileID: 11400000}
+  m_Priority: 5
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 1
 --- !u!114 &8982544807395457350
 MonoBehaviour:
@@ -284,6 +345,7 @@ MonoBehaviour:
     - [ ] Find Validate attributes and create TODO items on failures'
   m_Category: {fileID: 11400000}
   m_Priority: 150
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &9213872253768844862
 MonoBehaviour:
@@ -302,4 +364,5 @@ MonoBehaviour:
     description is available yet.
   m_Category: {fileID: 11400000}
   m_Priority: 200
+  m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
