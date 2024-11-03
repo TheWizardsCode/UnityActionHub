@@ -1,18 +1,11 @@
 using NaughtyAttributes;
-using NUnit.Framework.Interfaces;
-using PlasticPipe.Certificates;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Component = UnityEngine.Component;
 using Debug = UnityEngine.Debug;
 
@@ -52,7 +45,7 @@ namespace WizardsCode.ActionHubEditor
                     return "No validation has been run yet.";
                 }
 
-                StringBuilder sb = new StringBuilder($"Last validation run was at {LastValidationTime.ToShortDateString()}.\n\n");
+                StringBuilder sb = new StringBuilder($"Last validation run was at {LastValidationTime.ToLongDateString()}.\n\n");
                 if (!LastValidationFailures.HasFailures)
                 {
                     sb.Append($"All {ComponentScript.name} tests passed.");
@@ -166,12 +159,35 @@ namespace WizardsCode.ActionHubEditor
                     sb.AppendLine($"{failure.Prefab.name}: {failure.Message}");
                 }
 
-                EditorUtility.DisplayDialog("Validation Failed", sb.ToString(), "OK");
+                bool createTodo = EditorUtility.DisplayDialog("Validation Failed", sb.ToString() + "\n\nDo you want to create a ToDo item for each new issue?", "Yes", "No");
                 Debug.LogError(sb.ToString());
+
+                if (createTodo)
+                {
+                    foreach (ValidationFailure failure in failures.failures)
+                    {
+                        string name = $"{failure.Message} - {componentScript.name} on {failure.Prefab.name}";
+
+                        ToDoAction action = ScriptableObject.CreateInstance<ToDoAction>();
+                        if (action == null)
+                        {
+                            continue; // don't record a failure twice
+                        }
+
+                        action = CreateInstance<ToDoAction>();
+                        action.name = name;
+                        action.DisplayName = action.name;
+                        action.Description = $"Validation of {componentScript.name} failed for {failure.Prefab.name}: \"{failure.Message}\"";
+                        action.Priority = 25;
+                        action.Category = Action.ResourceLoad<ActionCategory>("Quality");
+
+                        action.OnSaveToAssetDatabase();
+                    }
+                }
             }
             else
             {
-                string result = $"Validation of {testedCount} prefabs with {componentScript.name} passed.";
+                string result = $"Validation of {testedCount} prefabs containing {componentScript.name} passed fully.";
                 EditorUtility.DisplayDialog("Validation Passed", result, "OK");
 
                 Debug.Log(result);
@@ -238,6 +254,20 @@ namespace WizardsCode.ActionHubEditor
 
         public bool HasFailures => Count > 0;
         public int Count => failures.Count;
+        public string Report
+        {
+            get
+            {
+                int count = 0;
+                StringBuilder sb = new StringBuilder();
+                foreach (ValidationFailure failure in failures)
+                {
+                    count++;
+                    sb.AppendLine($"{count.ToString("D3")}. {failure.Prefab.name}: {failure.Message}");
+                }
+                return sb.ToString();
+            }
+        }
 
         public void AddFailure(GameObject prefab, string message)
         {
