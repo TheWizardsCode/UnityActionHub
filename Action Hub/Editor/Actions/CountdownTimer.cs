@@ -25,7 +25,7 @@ namespace WizardsCode.ActionHubEditor
 
                 if (m_IsRunning)
                 {
-                    ActionHubWindow.CreateLabel($"Time remaining: {(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}");
+                    ActionHubWindow.CreateLabel($"Time remaining: {FormatTime(m_EndTime - Time.realtimeSinceStartup)}");
                 }
 
                 if (!m_IsRunning && GUILayout.Button($"Start {m_Duration.ToString("F0")} second timer", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
@@ -76,27 +76,57 @@ namespace WizardsCode.ActionHubEditor
             EditorGUILayout.EndHorizontal();
         }
 
+        private string FormatTime(float totalSeconds)
+        {
+            int days = (int)(totalSeconds / 86400);
+            totalSeconds %= 86400;
+            int hours = (int)(totalSeconds / 3600);
+            totalSeconds %= 3600;
+            int minutes = (int)(totalSeconds / 60);
+            int seconds = (int)(totalSeconds % 60);
+
+            string result = string.Empty;
+            if (days > 0) result += $"{days}:";
+            if (days > 0 || hours > 0) result += $"{hours}:";
+            if (days > 0 || hours > 0 || minutes > 0) result += $"{minutes.ToString("D2")}:";
+            if (seconds > 0 || result == string.Empty) result += $"{seconds.ToString("D2")}";
+
+            if (result.EndsWith(":"))
+            {
+                result = result.Substring(0, result.Length - 1);
+            }
+
+            if (result == "00")
+            {
+                result = "Fin";
+            }
+
+            return result.Trim();
+        }
+
         protected override IEnumerator OnUpdate()
         {
             WaitForSeconds waitOneSecond = new WaitForSeconds(1);
 
             while (m_IsRunning)
             {
+                if (ActionHubWindow.Status.ContainsKey(this))
+                {
+                    ActionHubWindow.Status[this] = $"{FormatTime(m_EndTime - Time.realtimeSinceStartup)}";
+                } else
+                {
+                    ActionHubWindow.Status.Add(this, $"{FormatTime(m_EndTime - Time.realtimeSinceStartup)}");
+                }
+
+                ActionHubWindow.ForceRepaint();
+
+
                 if (Time.realtimeSinceStartup > m_EndTime)
                 {
                     ActionHubWindow.Status.Remove(this);
                     m_IsRunning = false;
+                    break;
                 }
-
-                if (ActionHubWindow.Status.ContainsKey(this))
-                {
-                    ActionHubWindow.Status[this] = $"{(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}";
-                } else
-                {
-                    ActionHubWindow.Status.Add(this, $"{(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}");
-                }
-
-                ActionHubWindow.ForceRepaint();
 
                 yield return waitOneSecond;
             }

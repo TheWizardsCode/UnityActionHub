@@ -262,7 +262,7 @@ namespace WizardsCode.ActionHubEditor
                     }
                 }
                 title += ")";
-            }
+            }  
             titleContent = new GUIContent(title, tooltip);
 
             if (guiSkin != null)
