@@ -24,11 +24,6 @@ namespace WizardsCode.ActionHubEditor
         [SerializeField, Tooltip("If true the OnUpdate coroutine will be automatically started.")]
         private bool m_ActivateOnUpdateAtStart = false;
 
-        /// <summary>
-        /// Gets the width to use for the content in this GUI.
-        /// </summary>
-        protected float Width => ActionHubWindow.Window.ContentWidth;
-
         protected virtual bool ShowMetadataInInspector => true;
 
         internal virtual bool IncludeInHub => true;
@@ -69,14 +64,6 @@ namespace WizardsCode.ActionHubEditor
             ActionHubWindow.RefreshActions();
         }
 
-        public virtual void Do()
-        {
-            EditorGUIUtility.PingObject(this);
-            Selection.activeObject = this;
-
-            Debug.Log("TODO implement action: " + m_DisplayName);
-        }
-
         /// <summary>
         /// Render the complete GUI for this action. This includes the custom GUI and the end GUI.
         /// </summary>
@@ -99,7 +86,10 @@ namespace WizardsCode.ActionHubEditor
             GUIContent content = new GUIContent("Select", "Select this item.");
             if (GUILayout.Button(content, GUILayout.Width(60)))
             {
-                Do();
+                EditorGUIUtility.PingObject(this);
+                Selection.activeObject = this;
+
+                Debug.Log("TODO implement action: " + m_DisplayName);
             }
         }
 

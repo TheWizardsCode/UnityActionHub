@@ -30,28 +30,19 @@ namespace WizardsCode.ActionHubEditor
         private string newItemName;
         private int newPriority;
 
-        public override void Do()
-        {
-            Undo.RecordObject(this, "Mark ToDo Action Complete");
-            m_IsComplete = true;
-            EditorUtility.SetDirty(this);
-        }
-
         protected override void OnCustomGUI()
         {
-            GUILayout.BeginVertical("box");
+            GUILayout.BeginHorizontal("box");
             {
-                GUILayout.BeginHorizontal();
+                ActionHubWindow.CreateClickableLabel(DisplayName, Description, this);
+                if (GUILayout.Button("Complete", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {
-                    ActionHubWindow.CreateClickableLabel(DisplayName, Description, this);
-                    if (GUILayout.Button("Mark Complete", GUILayout.Width(120)))
-                    {
-                        Do();
-                    }
+                    Undo.RecordObject(this, "Mark ToDo Action Complete");
+                    m_IsComplete = true;
+                    EditorUtility.SetDirty(this);
                 }
-                GUILayout.EndHorizontal();
             }
-            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
         }
 
         internal override void OnCreateGUI()
@@ -61,12 +52,12 @@ namespace WizardsCode.ActionHubEditor
                 EditorGUILayout.LabelField("Create ToDo", GUILayout.Width(CreateLabelWidth));
                 newItemName = EditorGUILayout.TextField(newItemName, GUILayout.ExpandWidth(true));
                 
-                newPriority = EditorGUILayout.IntField(newPriority, GUILayout.Width(75));
+                newPriority = EditorGUILayout.IntField(newPriority, GUILayout.Width(50));
 
                 bool isValidName = IsValidName(newItemName);
                 EditorGUI.BeginDisabledGroup(!isValidName);
                 {
-                    if (GUILayout.Button("Add", GUILayout.Width(100)))
+                    if (GUILayout.Button("Add", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                     {
                         // create a new ToDoAction and save it to the AssetDatabase
                         ToDoAction newAction = ScriptableObject.CreateInstance<ToDoAction>();

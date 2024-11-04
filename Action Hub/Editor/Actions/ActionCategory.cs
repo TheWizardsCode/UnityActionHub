@@ -55,11 +55,6 @@ namespace WizardsCode.ActionHubEditor
         /// </summary>
         public virtual bool AlwaysShowInHub { get => m_AlwaysShowInHub; set => m_AlwaysShowInHub = value; }
 
-        /// <summary>
-        /// Gets the width to use for the content in this GUI.
-        /// </summary>
-        protected float Width => ActionHubWindow.Window.ContentWidth;
-
         bool showAll = false;
 
         /// <summary>
@@ -67,7 +62,7 @@ namespace WizardsCode.ActionHubEditor
         /// </summary>
         /// <param name="activeActions">The list of active actions.</param>
         /// <param name="activeTemplates">The list of active templates.</param>
-        public void OnActionListGUI(List<Action> activeActions, List<Action> activeTemplates)
+        public void ActionListGUI(List<Action> activeActions, List<Action> activeTemplates)
         {
             int toShow = 0;
             if (showAll)
@@ -89,7 +84,7 @@ namespace WizardsCode.ActionHubEditor
                 }
             }
 
-            GUILayout.BeginVertical("box", GUILayout.Width(Width));
+            GUILayout.BeginVertical("box");
             {
                 GUILayout.BeginVertical();
                 {
@@ -97,18 +92,18 @@ namespace WizardsCode.ActionHubEditor
                     {
                         string showing = activeActions.Count > m_MaxActionsToShow ? $"Showing {m_MaxActionsToShow} of {activeActions.Count} actions" : $"{activeActions.Count} actions";
                         string label = $"{DisplayName} - {showing}";
-                        ActionHubWindow.CreateClickableHeading(label, Description, this);
+                        ActionHubWindow.CreateSectionHeading(label, Description);
 
                         if (showAll)
                         {
-                            if (GUILayout.Button($"Show {m_MaxActionsToShow}", GUILayout.Width(60)))
+                            if (GUILayout.Button($"Show {m_MaxActionsToShow}", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                             {
                                 showAll = false;
                             }
                         } 
                         else if (toShow < activeActions.Count)
                         {
-                            if (GUILayout.Button("Show All", GUILayout.Width(60)))
+                            if (GUILayout.Button("Expand", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                             {
                                 showAll = true;
                             }
@@ -119,7 +114,7 @@ namespace WizardsCode.ActionHubEditor
                     // Display the create experiences for all templates available
                     foreach (Action createAction in activeTemplates)
                     {
-                        GUILayout.BeginHorizontal("Box", GUILayout.Width(Width));
+                        GUILayout.BeginHorizontal("Box");
                         {
                             createAction.OnCreateGUI();
                         }

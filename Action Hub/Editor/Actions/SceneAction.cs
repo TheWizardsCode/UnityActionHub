@@ -26,7 +26,6 @@ namespace WizardsCode.ActionHubEditor
 
         protected override void OnCustomGUI()
         {
-            // Check if the scene is present in the build settings
             bool sceneInBuildSettings = false;
             string scenePath = null;
             foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
@@ -39,23 +38,26 @@ namespace WizardsCode.ActionHubEditor
                 }
             }
 
-            if (!sceneInBuildSettings)
+            EditorGUILayout.BeginHorizontal("box");
             {
-                OnMissingSceneGUI();
+                if (!sceneInBuildSettings)
+                {
+                    MissingSceneGUI();
+                }
+                else
+                {
+                    ValidSceneGUI(scenePath);
+                }
             }
-            else
-            {
-                OnValidSceneGUI(scenePath);
-            }
+            EditorGUILayout.EndHorizontal();
         }
 
         internal override void OnCreateGUI()
         {
-            GUILayout.BeginHorizontal("box");
+            EditorGUILayout.BeginHorizontal("box");
             {
-                EditorGUILayout.LabelField("Create Scene Action", GUILayout.Width(CreateLabelWidth));
+                ActionHubWindow.CreateLabel("Create Scene Action");
 
-                // Dropdown to select from scenes in build settings
                 List<string> sceneNames = new List<string>();
                 foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
                 {
@@ -63,19 +65,17 @@ namespace WizardsCode.ActionHubEditor
                 }
 
                 int selectedSceneIndex = sceneNames.IndexOf(newScene);
-                selectedSceneIndex = EditorGUILayout.Popup("Select scene to add", selectedSceneIndex, sceneNames.ToArray(), GUILayout.MinWidth(300));
+                selectedSceneIndex = EditorGUILayout.Popup("Select scene to add", selectedSceneIndex, sceneNames.ToArray());
 
                 if (selectedSceneIndex >= 0 && selectedSceneIndex < sceneNames.Count)
                 {
                     newScene = sceneNames[selectedSceneIndex];
                 }
 
-                // Disable the button if newItem is invalid
                 EditorGUI.BeginDisabledGroup(string.IsNullOrEmpty(newScene));
                 {
-                    if (GUILayout.Button("Add Scene", GUILayout.Width(100)))
+                    if (GUILayout.Button("Add Scene", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                     {
-                        // create a new ToDoAction and save it to the AssetDatabase
                         SceneAction newAction = ScriptableObject.CreateInstance<SceneAction>();
                         newAction.name = newScene;
                         newAction.Scene = newScene;
@@ -90,27 +90,25 @@ namespace WizardsCode.ActionHubEditor
                 }
                 EditorGUI.EndDisabledGroup();
             }
-            GUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal();
         }
 
-        private void OnValidSceneGUI(string scenePath)
+        private void ValidSceneGUI(string scenePath)
         {
-            // Scene is in build settings, show normal GUI
-            GUIContent content = new GUIContent(DisplayName, Description);
-            GUILayout.Label(content);
+            ActionHubWindow.CreateClickableLabel(DisplayName, Description, AssetDatabase.LoadAssetAtPath<Object>(scenePath));
 
             // Add a GUI toggle for IsAdditive
-            IsAdditive = EditorGUILayout.ToggleLeft(new GUIContent("Is Additive", "If the actions are additive then any changes to load status will not impact other scenes. If it is not additive then changes to load status will unload other scenes"), IsAdditive);
+            IsAdditive = EditorGUILayout.ToggleLeft(new GUIContent("Is Additive", "If the actions are additive then any changes to load status will not impact other scenes. If it is not additive then changes to load status will unload other scenes"), IsAdditive, GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth));
 
             OpenSceneMode openSceneMode = IsAdditive ? OpenSceneMode.Additive : OpenSceneMode.Single;
 
-            if (GUILayout.Button(new GUIContent("Load", "Load the scene.")))
+            if (GUILayout.Button(new GUIContent("Load", "Load the scene."), GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
             {
                 EditorSceneManager.OpenScene(scenePath, openSceneMode);
             }
 
             EditorGUI.BeginDisabledGroup(SceneManager.sceneCount == 1);
-            if (GUILayout.Button(new GUIContent("Remove", "Remove the scene.")))
+            if (GUILayout.Button(new GUIContent("Remove", "Remove the scene from the currently listed scenes. Only available if there is more than one scene currently loaded."), GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
             {
                 Scene scene = SceneManager.GetSceneByPath(scenePath);
                 if (scene.IsValid())
@@ -127,19 +125,17 @@ namespace WizardsCode.ActionHubEditor
             }
             EditorGUI.EndDisabledGroup();
 
-            if (GUILayout.Button(new GUIContent("Play", "Start the application in this scene.")))
+            if (GUILayout.Button(new GUIContent("Play", "Start the application in this scene."), GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
             {
                 EditorSceneManager.OpenScene(scenePath, openSceneMode);
                 EditorApplication.isPlaying = true;
             }
         }
 
-        private void OnMissingSceneGUI()
+        private void MissingSceneGUI()
         {
-            // Scene is not in build settings, provide options
-            GUILayout.Label("Scene not found in build settings.", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Scene not found in build settings.", EditorStyles.boldLabel);
 
-            // Dropdown to select from scenes in build settings
             List<string> sceneNames = new List<string>();
             foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
             {
@@ -154,7 +150,7 @@ namespace WizardsCode.ActionHubEditor
                 m_Scene = sceneNames[selectedSceneIndex];
             }
 
-            if (GUILayout.Button("Ping Action Definition"))
+            if (GUILayout.Button("Ping", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
             {
                 EditorGUIUtility.PingObject(this);
                 Selection.activeObject = this;

@@ -69,14 +69,14 @@ namespace WizardsCode.ActionHubEditor
 
         protected override void OnCustomGUI()
         {
-            GUILayout.BeginHorizontal("box");
+            EditorGUILayout.BeginHorizontal("box");
             {
                 if (ComponentScript != null)
                 {
                     string lastRun = LastValidationTime == default(DateTime) ? "Not run yet" : $"last run {LastValidationTime.ToString("g")}";
                     ActionHubWindow.CreateClickableLabel($"Validate {ComponentScript.name} ({lastRun})", LastValidationReport, ComponentScript);
 
-                    if (GUILayout.Button("Validate", GUILayout.Width(100)))
+                    if (GUILayout.Button("Validate", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                     {
                         ClearConsole();
 
@@ -86,15 +86,11 @@ namespace WizardsCode.ActionHubEditor
                 }
                 else
                 {
-                    GUILayout.BeginHorizontal();
-                    {
-                        ActionHubWindow.CreateClickableLabel($"{name} (Incomplete)", "Component has not been set yet.", ComponentScript);
-                        ComponentScript = (MonoScript)EditorGUILayout.ObjectField(ComponentScript, typeof(MonoScript), false);
-                    }
-                    GUILayout.EndHorizontal();
+                    ActionHubWindow.CreateClickableLabel($"{name} (Incomplete)", "Component has not been set yet.", ComponentScript, true);
+                    ComponentScript = (MonoScript)EditorGUILayout.ObjectField(ComponentScript, typeof(MonoScript), false);
                 }
             }
-            GUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal();
         }
 
         private static ValidationFailures ValidateComponents(MonoScript componentScript)
@@ -219,11 +215,11 @@ namespace WizardsCode.ActionHubEditor
 
         internal override void OnCreateGUI()
         {
-            GUILayout.BeginHorizontal("box");
+            EditorGUILayout.BeginHorizontal("box");
             {
                 ActionHubWindow.CreateLabel("Create Validation Action");
                 newComponentScript = (MonoScript)EditorGUILayout.ObjectField(newComponentScript, typeof(MonoScript), false);
-                if (GUILayout.Button("Create Validation", GUILayout.Width(100)))
+                if (GUILayout.Button("Create", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {
                     ValidationAction action = CreateInstance<ValidationAction>();
                     action.ComponentScript = newComponentScript;
@@ -237,7 +233,7 @@ namespace WizardsCode.ActionHubEditor
                     ComponentScript = null;
                 }
             }
-            GUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal();
         }
 
         private void ClearConsole()

@@ -19,7 +19,7 @@ namespace WizardsCode.ActionHubEditor
 
         protected override void OnCustomGUI()
         {
-            GUILayout.BeginHorizontal();
+            EditorGUILayout.BeginHorizontal("box");
             {
                 ActionHubWindow.CreateClickableLabel(DisplayName, Description, this);
 
@@ -28,14 +28,14 @@ namespace WizardsCode.ActionHubEditor
                     ActionHubWindow.CreateLabel($"Time remaining: {(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}");
                 }
 
-                if (!m_IsRunning && GUILayout.Button($"Start {m_Duration.ToString("F0")} second timer"))
+                if (!m_IsRunning && GUILayout.Button($"Start {m_Duration.ToString("F0")} second timer", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {
                     m_EndTime = Time.realtimeSinceStartup + m_Duration;
                     m_IsRunning = true;
                     ActivateOnUpdate();
                 }
             }
-            GUILayout.EndHorizontal();
+            EditorGUILayout.EndHorizontal();
         }
 
         internal override void OnCreateGUI()
