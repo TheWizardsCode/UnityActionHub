@@ -245,9 +245,11 @@ namespace WizardsCode.ActionHubEditor
                 GUI.skin = guiSkin;
             }
 
-            if (GUILayout.Button("Refresh"))
+            if (Event.current.type == EventType.ContextClick)
             {
-                RefreshActions();
+                GenericMenu menu = new GenericMenu();
+                menu.AddItem(new GUIContent("Force a Refresh"), false, () => RefreshActions());
+                menu.ShowAsContext();
             }
 
             m_MainWindowScrollPosition = GUILayout.BeginScrollView(m_MainWindowScrollPosition, GUILayout.Width(TotalWidth), GUILayout.ExpandHeight(true));
@@ -403,6 +405,11 @@ namespace WizardsCode.ActionHubEditor
 
         public static void RefreshActions()
         {
+            if (Window == null)
+            {
+                return;
+            }
+
             Window.LoadAllData();
             Window.OnEnable();
             Window.Repaint();
