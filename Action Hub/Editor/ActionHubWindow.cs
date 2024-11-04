@@ -23,11 +23,15 @@ namespace WizardsCode.ActionHubEditor
         private List<ActionCategory> m_Categories = new List<ActionCategory>();
         private ActionCategory m_DefaultCategory;
         private Vector2 m_MainWindowScrollPosition;
+        [SerializeField]
+        private int m_MaxRecentItemsToShow = 3;
+        [SerializeField]
+        private int m_MaxFolderItemsToShow = 3;
 
         [SerializeField]
-        private List<Object> lastSelectedItems = new List<Object>();
+        private List<Object> recentlySelectedItems = new List<Object>();
         [SerializeField]
-        private List<Object> accessedFolders = new List<Object>();
+        private List<Object> recentlySelectedFolders = new List<Object>();
 
         private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
         private VisualElement root;
@@ -42,7 +46,10 @@ namespace WizardsCode.ActionHubEditor
 
         float FolderSectionWidth => 100f;
         float ItemSectionWidth => ContentWidth - FolderSectionWidth - 2;
-        int MaxItemsToShow => 10;
+        int MaxRecentItemsToShow {
+            get => m_MaxRecentItemsToShow;
+            set => m_MaxRecentItemsToShow = Mathf.Max(1, value);
+        }
         float ItemHeight => EditorGUIUtility.singleLineHeight;
 
         /// <summary>
@@ -100,16 +107,16 @@ namespace WizardsCode.ActionHubEditor
                 return;
             }
 
-            if (lastSelectedItems.Contains(selectedObject))
+            if (recentlySelectedItems.Contains(selectedObject))
             {
-                lastSelectedItems.Remove(selectedObject);
+                recentlySelectedItems.Remove(selectedObject);
             }
 
-            lastSelectedItems.Add(selectedObject);
+            recentlySelectedItems.Add(selectedObject);
 
-            if (lastSelectedItems.Count > 10)
+            if (recentlySelectedItems.Count > 100)
             {
-                lastSelectedItems.RemoveAt(0);
+                recentlySelectedItems.RemoveAt(0);
             }
 
             if (Window != null)
@@ -129,12 +136,12 @@ namespace WizardsCode.ActionHubEditor
                 if (AssetDatabase.IsValidFolder(path))
                 {
                     Object selectedObject = AssetDatabase.LoadAssetAtPath<Object>(path);
-                    if (!accessedFolders.Contains(selectedObject))
+                    if (!recentlySelectedFolders.Contains(selectedObject))
                     {
-                        accessedFolders.Add(selectedObject);
-                        if (accessedFolders.Count > 10)
+                        recentlySelectedFolders.Add(selectedObject);
+                        if (recentlySelectedFolders.Count > 10)
                         {
-                            accessedFolders.RemoveAt(0);
+                            recentlySelectedFolders.RemoveAt(0);
                         }
                     }
 
@@ -260,10 +267,9 @@ namespace WizardsCode.ActionHubEditor
             GUILayout.EndScrollView();
         }
 
-
         private void RecentlySelectedGUI()
         {
-            float totalHeight = (MaxItemsToShow * ItemHeight) + EditorGUIUtility.singleLineHeight * 1.1f;
+            float totalHeight = (MaxRecentItemsToShow * ItemHeight) + EditorGUIUtility.singleLineHeight * 1.1f;
 
             GUILayout.BeginHorizontal();
             {
@@ -275,34 +281,32 @@ namespace WizardsCode.ActionHubEditor
 
         private void FoldersGUI()
         {
-            float totalHeight = (MaxItemsToShow * ItemHeight) + EditorGUIUtility.singleLineHeight * 1.1f;
-
-            EditorGUILayout.BeginVertical("box", GUILayout.Height(totalHeight), GUILayout.Width(FolderSectionWidth), GUILayout.ExpandWidth(false));
+            EditorGUILayout.BeginVertical("box", GUILayout.Width(FolderSectionWidth), GUILayout.ExpandWidth(false));
             {
                 GUILayout.BeginHorizontal();
                 {
-                    CreateHeading("Recently Accessed Folders", "Folders that have been recently accessed");
+                    CreateHeading("Folders", "Folders that have been recently selected. Adjust the number visible using the input field on the right.");
                 }
                 GUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginVertical("Box");
                 {
-                    if (accessedFolders.Count == 0)
+                    if (recentlySelectedFolders.Count == 0)
                     {
                         CreateLabel("No folders accessed", "No folders accessed");
                     }
                     else
                     {
-                        for (int i = accessedFolders.Count - 1; i >= 0; i--)
+                        for (int i = recentlySelectedFolders.Count - 1; i >= 0 && recentlySelectedFolders.Count - i <= MaxRecentItemsToShow; i--)
                         {
-                            Object folder = accessedFolders[i];
+                            Object folder = recentlySelectedFolders[i];
                             if (folder != null)
                             {
                                 CreateClickableLabel(folder.name, AssetDatabase.GetAssetPath(folder), folder, true, GUILayout.MaxWidth(FolderSectionWidth));
                             }
                             else
                             {
-                                accessedFolders.RemoveAt(i);
+                                recentlySelectedFolders.RemoveAt(i);
                             }
                         }
                     }
@@ -314,27 +318,36 @@ namespace WizardsCode.ActionHubEditor
 
         private void ItemsGUI()
         {
-            float totalHeight = (MaxItemsToShow * ItemHeight) + EditorGUIUtility.singleLineHeight * 1.1f;
-
-            GUILayout.BeginVertical("box", GUILayout.Height(totalHeight));
+            GUILayout.BeginVertical("box");
             {
                 GUILayout.BeginHorizontal();
                 {
-                    CreateHeading("Recently Selected Items", "Items that have been recently selected", GUILayout.MaxWidth(ItemSectionWidth));
+                    CreateHeading("Items", "Items that have been recently selected. Adjust the number visible using the input field on the right.", GUILayout.MaxWidth(ItemSectionWidth));
+
+                    EditorGUILayout.BeginHorizontal();
+                    {
+                        GUILayout.FlexibleSpace();
+                        MaxRecentItemsToShow = EditorGUILayout.IntField(MaxRecentItemsToShow, GUILayout.Width(25));
+                        if (MaxRecentItemsToShow < recentlySelectedItems.Count && GUILayout.Button("All", GUILayout.Width(30)))
+                        {
+                            MaxRecentItemsToShow = recentlySelectedItems.Count;
+                        }
+                    } 
+                    GUILayout.EndHorizontal();
                 }
                 GUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginVertical("Box");
                 {
-                    if (lastSelectedItems.Count == 0)
+                    if (recentlySelectedItems.Count == 0)
                     {
                         CreateLabel("No items recorded", "No items recorded");
                     }
                     else
                     {
-                        for (int i = lastSelectedItems.Count - 1; i >= 0; i--)
+                        for (int i = recentlySelectedItems.Count - 1; i >= 0 && recentlySelectedItems.Count - i <= MaxRecentItemsToShow; i--)
                         {
-                            Object item = lastSelectedItems[i];
+                            Object item = recentlySelectedItems[i];
                             if (item != null)
                             {
                                 if (item is SceneAsset)
@@ -356,7 +369,7 @@ namespace WizardsCode.ActionHubEditor
                             }
                             else
                             {
-                                lastSelectedItems.RemoveAt(i);
+                                recentlySelectedItems.RemoveAt(i);
                             }
                         }
                     }
