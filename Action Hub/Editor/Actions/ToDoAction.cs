@@ -24,8 +24,16 @@ namespace WizardsCode.ActionHubEditor
     {
         [SerializeField, Tooltip("Has this ToDo been completed?")]
         private bool m_IsComplete = false;
+        [SerializeField, Tooltip("An optional reference to an object relating to this ToDo item. Users will be able to quickly navigate to this object from the Action Hub.")]
+        private Object m_RelatedObject = null;
 
         internal override bool IncludeInHub => !m_IsComplete;
+
+        public Object RelatedObject
+        {
+            get { return m_RelatedObject; }
+            set { m_RelatedObject = value; }
+        }
 
         private string newItemName;
         private int newPriority;
@@ -35,6 +43,10 @@ namespace WizardsCode.ActionHubEditor
             GUILayout.BeginHorizontal("box");
             {
                 ActionHubWindow.CreateClickableLabel(DisplayName, Description, this);
+
+                GUIContent content = new GUIContent("Related to", "A simple reference to an object this ToDo item relates to. Provides easy access for the future.");
+                m_RelatedObject = EditorGUILayout.ObjectField(m_RelatedObject, typeof(Object), false, GUILayout.Width(200));
+
                 if (GUILayout.Button("Complete", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {
                     Undo.RecordObject(this, "Mark ToDo Action Complete");

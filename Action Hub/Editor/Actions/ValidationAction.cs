@@ -176,6 +176,7 @@ namespace WizardsCode.ActionHubEditor
                         action.DisplayName = action.name;
                         action.Description = $"Validation of {componentScript.name} failed for {failure.Prefab.name}: \"{failure.Message}\"";
                         action.Priority = 25;
+                        action.RelatedObject = failure.Prefab;
                         action.Category = Action.ResourceLoad<ActionCategory>("Quality");
 
                         action.OnSaveToAssetDatabase();
