@@ -16,11 +16,12 @@ namespace WizardsCode.ActionHubEditor
     /// </summary>
     public class ActionHubWindow : EditorWindow
     {
+        public static ActionHubWindow Window;
+
         private List<Action> m_Actions = new List<Action>();
         private List<Action> m_ActionTemplates = new List<Action>();
         private List<ActionCategory> m_Categories = new List<ActionCategory>();
         private ActionCategory m_DefaultCategory;
-        private static ActionHubWindow m_Window;
         private Vector2 m_MainWindowScrollPosition;
 
         [SerializeField]
@@ -43,20 +44,6 @@ namespace WizardsCode.ActionHubEditor
         float ItemSectionWidth => ContentWidth - FolderSectionWidth - 2;
         int MaxItemsToShow => 10;
         float ItemHeight => EditorGUIUtility.singleLineHeight;
-        
-        /// <summary>
-        /// The window instance, use this whenver you need to access the window in code.
-        /// </summary>
-        internal static ActionHubWindow Window {
-            get
-            {
-                if (m_Window == null)
-                {
-                    m_Window = GetWindow<ActionHubWindow>("Action Hub");
-                }
-                return m_Window;
-            }
-        }
 
         /// <summary>
         /// Called when the window is enabled. This is used to register for events and initialise the data.
@@ -77,7 +64,7 @@ namespace WizardsCode.ActionHubEditor
                 Debug.LogError("Default category not found!");
             }
 
-            m_Window = this;
+            Window = this;
         }
 
         /// <summary>
@@ -88,9 +75,9 @@ namespace WizardsCode.ActionHubEditor
             Selection.selectionChanged -= OnSelectionChanged;
             EditorApplication.projectWindowItemOnGUI -= OnProjectWindowItemGUI;
 
-            if (m_Window == this)
+            if (Window == this)
             {
-                m_Window = null;
+                Window = null;
             }
         }
 
@@ -125,8 +112,11 @@ namespace WizardsCode.ActionHubEditor
                 lastSelectedItems.RemoveAt(0);
             }
 
-            EditorUtility.SetDirty(Window);
-            Repaint();
+            if (Window != null)
+            {
+                EditorUtility.SetDirty(Window);
+                Repaint();
+            }
         }
 
         private void OnProjectWindowItemGUI(string guid, Rect selectionRect)
@@ -157,16 +147,16 @@ namespace WizardsCode.ActionHubEditor
         [MenuItem("Tools/Wizards Code/Action Hub")]
         public static void ShowWindow()
         {
-            if (m_Window == null)
+            if (Window == null)
             {
-                m_Window = GetWindow<ActionHubWindow>("Action Hub");
+                Window = GetWindow<ActionHubWindow>("Action Hub");
             }
             else
             {
-                m_Window.Focus();
+                Window.Focus();
             }
-            m_Window.minSize = new Vector2(500, m_Window.minSize.y);
-            m_Window.maxSize = new Vector2(m_Window.maxSize.x, m_Window.maxSize.y);
+            Window.minSize = new Vector2(500, Window.minSize.y);
+            Window.maxSize = new Vector2(Window.maxSize.x, Window.maxSize.y);
         }
 
         /// <summary>
