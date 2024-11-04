@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -75,7 +75,7 @@ namespace WizardsCode.ActionHubEditor
                         ToDoAction newAction = ScriptableObject.CreateInstance<ToDoAction>();
                         newAction.name = newItemName;
                         newAction.DisplayName = newItemName;
-                        newAction.Description = "This is a new ToDo item that has been added to the Action Hub. No description is available yet.";
+	                    newAction.Description = string.Empty;
                         newAction.Priority = newPriority;
                         newAction.Category = Category;
 

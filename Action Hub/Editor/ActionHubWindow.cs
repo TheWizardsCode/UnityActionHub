@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -35,7 +35,8 @@ namespace WizardsCode.ActionHubEditor
 
         private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
         private VisualElement root;
-        private GUISkin guiSkin;
+	    private GUISkin guiSkin;
+	    private string newItemName;
 
         float m_Columns = 10;
         public float TotalWidth => position.width;
@@ -382,7 +383,29 @@ namespace WizardsCode.ActionHubEditor
                                 }
                                 else
                                 {
-                                    CreateClickableLabel(item.name, AssetDatabase.GetAssetPath(item), item, true);
+                                	GUILayout.BeginHorizontal();
+                                	{
+	                                	CreateClickableLabel(item.name, AssetDatabase.GetAssetPath(item), item, true);
+	                                	newItemName = EditorGUILayout.TextField(newItemName);
+	                                	EditorGUI.BeginDisabledGroup(newItemName.Length < 5);
+	                                	{
+		                                	if (GUILayout.Button("New Todo", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth))) {
+		                                		ToDoAction newAction = ScriptableObject.CreateInstance<ToDoAction>();
+			                                	newAction.name = newItemName;
+			                                	newAction.DisplayName = newAction.name;
+			                                	newAction.RelatedObject = item;
+			                                	newAction.Description = "";
+			                                	newAction.Priority = 1000;
+	
+			                                	newAction.OnSaveToAssetDatabase();
+			                                	newItemName = string.Empty;
+			                                	
+			                                	GUI.FocusControl(null);
+		                                	}
+	                                	}
+	                                	EditorGUI.EndDisabledGroup();
+                                	}
+                                	GUILayout.EndHorizontal();
                                 }
                             }
                             else
