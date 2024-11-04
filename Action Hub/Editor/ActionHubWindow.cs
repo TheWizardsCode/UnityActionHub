@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using Object = UnityEngine.Object;
 using System.Reflection;
+using UnityEngine.UIElements;
 
 namespace WizardsCode.ActionHubEditor
 {
@@ -27,10 +28,13 @@ namespace WizardsCode.ActionHubEditor
         private List<Object> accessedFolders = new List<Object>();
 
         private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
+        private VisualElement root;
+        private GUISkin guiSkin;
+
         /// <summary>
         /// The window instance, use this whenver you need to access the window in code.
         /// </summary>
-        private static ActionHubWindow Window {
+        internal static ActionHubWindow Window {
             get
             {
                 if (m_Window == null)
@@ -41,13 +45,16 @@ namespace WizardsCode.ActionHubEditor
             }
         }
 
-        public static float ContentWidth => EditorGUIUtility.currentViewWidth - 20;
+        public float ContentWidth => position.width - 20;
 
         /// <summary>
         /// Called when the window is enabled. This is used to register for events and initialise the data.
         /// </summary>
         private void OnEnable()
         {
+            root = rootVisualElement;
+            guiSkin = Resources.Load<GUISkin>("ActionHubSkin");
+
             Selection.selectionChanged += OnSelectionChanged;
             EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemGUI;
 
@@ -232,6 +239,11 @@ namespace WizardsCode.ActionHubEditor
 
         void OnGUI()
         {
+            if (guiSkin != null)
+            {
+                GUI.skin = guiSkin;
+            }
+
             if (GUILayout.Button("Refresh"))
             {
                 RefreshActions();
@@ -248,81 +260,91 @@ namespace WizardsCode.ActionHubEditor
 
         private void OnRecentlySelectedGUI()
         {
-            GUILayout.BeginHorizontal("Box", GUILayout.Width(ContentWidth));
+            float foldersWidth = 200f;
+            float itemsWidth = ContentWidth - foldersWidth - 2;
+            int maxItemsToShow = 10;
+            float itemHeight = EditorGUIUtility.singleLineHeight;
+            float totalHeight = (maxItemsToShow * itemHeight) + EditorGUIUtility.singleLineHeight * 1.1f;
 
-            GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+            GUILayout.BeginHorizontal(GUILayout.Height(totalHeight));
             {
-                CreateHeading("Recently Accessed Folders", "Folders that have been recently accessed");
+                GUILayout.BeginVertical("box", GUILayout.Width(foldersWidth), GUILayout.ExpandHeight(true)); // Folders
+                {
+                    CreateHeading("Recently Accessed Folders", "Folders that have been recently accessed");
 
-                if (accessedFolders.Count == 0)
-                {
-                    CreateLabel("No folders accessed", "No folders accessed");
-                }
-                else
-                {
-                    for (int i = accessedFolders.Count - 1; i >= 0; i--)
+                    GUILayout.BeginVertical("Box");
                     {
-                        Object folder = accessedFolders[i];
-                        if (folder != null)
+                        if (accessedFolders.Count == 0)
                         {
-                            CreateClickableLabel(folder.name, AssetDatabase.GetAssetPath(folder), folder);
+                            CreateLabel("No folders accessed", "No folders accessed");
                         }
                         else
                         {
-                            accessedFolders.RemoveAt(i);
+                            for (int i = accessedFolders.Count - 1; i >= 0; i--)
+                            {
+                                Object folder = accessedFolders[i];
+                                if (folder != null)
+                                {
+                                    CreateClickableLabel(folder.name, AssetDatabase.GetAssetPath(folder), folder);
+                                }
+                                else
+                                {
+                                    accessedFolders.RemoveAt(i);
+                                }
+                            }
                         }
-
-                        Separator(2);
                     }
+                    GUILayout.EndVertical();
                 }
-            }
-            GUILayout.EndVertical();
+                GUILayout.EndVertical();
 
-            GUILayout.Space(10); // Add space between the two vertical sections
+                GUILayout.Space(ContentWidth - foldersWidth - itemsWidth);
 
-            GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
-            {
-                CreateHeading("Recently Selected Items", "Items that have been recently selected");
-
-                if (lastSelectedItems.Count == 0)
+                GUILayout.BeginVertical("box", GUILayout.Width(itemsWidth), GUILayout.ExpandHeight(true)); // Items
                 {
-                    CreateLabel("No items recorded", "No items recorded");
-                }
-                else
-                {
-                    for (int i = lastSelectedItems.Count - 1; i >= 0; i--)
+                    CreateHeading("Recently Selected Items", "Items that have been recently selected");
+
+                    GUILayout.BeginVertical("Box");
                     {
-                        Object item = lastSelectedItems[i];
-                        if (item != null)
+                        if (lastSelectedItems.Count == 0)
                         {
-                            if (item is SceneAsset)
-                            {
-                                SceneAction sceneAction = ScriptableObject.CreateInstance<SceneAction>();
-                                sceneAction.name = item.name;
-                                sceneAction.Scene = ((SceneAsset)item).name;
-
-                                sceneAction.OnGUI();
-                            }
-                            else if (item is Action)
-                            {
-                                ((Action)item).OnGUI();
-                            }
-                            else
-                            {
-                                CreateClickableLabel(item.name, AssetDatabase.GetAssetPath(item), item);
-                            }
+                            CreateLabel("No items recorded", "No items recorded");
                         }
                         else
                         {
-                            lastSelectedItems.RemoveAt(i);
+                            for (int i = lastSelectedItems.Count - 1; i >= 0; i--)
+                            {
+                                Object item = lastSelectedItems[i];
+                                if (item != null)
+                                {
+                                    if (item is SceneAsset)
+                                    {
+                                        SceneAction sceneAction = ScriptableObject.CreateInstance<SceneAction>();
+                                        sceneAction.name = item.name;
+                                        sceneAction.Scene = ((SceneAsset)item).name;
+
+                                        sceneAction.OnGUI();
+                                    }
+                                    else if (item is Action)
+                                    {
+                                        ((Action)item).OnGUI();
+                                    }
+                                    else
+                                    {
+                                        CreateClickableLabel(item.name, AssetDatabase.GetAssetPath(item), item);
+                                    }
+                                }
+                                else
+                                {
+                                    lastSelectedItems.RemoveAt(i);
+                                }
+                            }
                         }
-
-                        Separator(2);
                     }
+                    GUILayout.EndVertical();
                 }
+                GUILayout.EndVertical();
             }
-            GUILayout.EndVertical();
-
             GUILayout.EndHorizontal();
         }
 
@@ -371,7 +393,7 @@ namespace WizardsCode.ActionHubEditor
             Window.Repaint();
         }
 
-        private static void Separator(float height = 5)
+        private static void Separator(float height = 2)
         {
             Color initialColor = GUI.color;
             GUI.color = Color.white;
@@ -392,32 +414,53 @@ namespace WizardsCode.ActionHubEditor
             return default(T);
         }
 
+
+        internal static GUIStyle LabelStyle
+        {
+            get
+            {
+                GUIStyle style = new GUIStyle(GUI.skin.label);
+                style.fixedHeight = EditorGUIUtility.singleLineHeight;
+
+                style.imagePosition = ImagePosition.ImageLeft;
+
+                style.margin = new RectOffset(10, 10, 0, 0);
+
+                return style;
+            }
+        }
+
+        internal static GUIStyle HeadingStyle
+        {
+            get
+            {
+                GUIStyle style = LabelStyle;
+
+                style.fixedHeight = EditorGUIUtility.singleLineHeight * 1.2f;
+
+                style.normal.background = MakeTex(1, 1, m_HeadingBackgroundColour);
+
+                return style;
+            }
+        }
+
         /// <summary>
         /// Create a label with a tooltip that responds to mouse events.
         /// A single click pings the object, a double click selects it.
         /// The tooltip is the description.
         /// </summary>
-        internal static void CreateClickableLabel(string text, string tooltip, Object obj, bool showIcon = true, Color backgroundColour = default, params GUILayoutOption[] options)
+        internal static void CreateClickableLabel(string text, string tooltip, Object obj, bool showIcon = true, params GUILayoutOption[] options)
         {
             GUIContent content = new GUIContent(text, tooltip);
-            GUIContent objectIcon = EditorGUIUtility.ObjectContent(obj, obj.GetType());
-
-            GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.normal.background = MakeTex(1, 1, backgroundColour);
-            labelStyle.margin = new RectOffset(10, 10, 0, 0);
-
-            Rect labelRect = GUILayoutUtility.GetRect(content, labelStyle, options);
 
             if (showIcon)
             {
-                Rect iconRect = new Rect(labelRect.x, labelRect.y, labelRect.height, labelRect.height);
-                EditorGUI.DrawRect(iconRect, backgroundColour);
-                GUI.Label(iconRect, objectIcon.image);
-
-                labelRect.x += iconRect.width;
+                GUIContent objectIcon = EditorGUIUtility.ObjectContent(obj, obj.GetType());
+                content.image = objectIcon.image;
             }
 
-            GUI.Label(labelRect, content, labelStyle);
+            Rect labelRect = GUILayoutUtility.GetRect(content, LabelStyle, options);
+            GUI.Label(labelRect, content, LabelStyle);
 
             Event e = Event.current;
             if (e.type == EventType.MouseDown && labelRect.Contains(e.mousePosition))
@@ -442,7 +485,7 @@ namespace WizardsCode.ActionHubEditor
                 GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.1f)
             }).ToArray();
 
-            CreateClickableLabel(label, tooltip, obj, showIcon, m_HeadingBackgroundColour, options);
+            CreateClickableLabel(label, tooltip, obj, showIcon, options);
         }
 
         internal static void CreateLabel(string text, string tooltip = null, Color backgroundColour = default, params GUILayoutOption[] options)

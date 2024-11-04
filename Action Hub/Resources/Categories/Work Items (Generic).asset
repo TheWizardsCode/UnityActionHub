@@ -125,7 +125,7 @@ MonoBehaviour:
 
 '
   m_Category: {fileID: 11400000}
-  m_Priority: 100
+  m_Priority: 150
   m_ActivateOnUpdateAtStart: 0
   m_IsComplete: 0
 --- !u!114 &-3613181188091665978

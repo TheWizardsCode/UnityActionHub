@@ -45,7 +45,7 @@ namespace WizardsCode.ActionHubEditor
                     return "No validation has been run yet.";
                 }
 
-                StringBuilder sb = new StringBuilder($"Last validation run was at {LastValidationTime.ToLongDateString()}.\n\n");
+                StringBuilder sb = new StringBuilder($"Validation report as of {LastValidationTime.ToString("g")}.\n\n");
                 if (!LastValidationFailures.HasFailures)
                 {
                     sb.Append($"All {ComponentScript.name} tests passed.");
@@ -73,7 +73,8 @@ namespace WizardsCode.ActionHubEditor
             {
                 if (ComponentScript != null)
                 {
-                    ActionHubWindow.CreateClickableLabel($"Validate {ComponentScript.name}", LastValidationReport, ComponentScript);
+                    string lastRun = LastValidationTime == default(DateTime) ? "Not run yet" : $"last run {LastValidationTime.ToString("g")}";
+                    ActionHubWindow.CreateClickableLabel($"Validate {ComponentScript.name} ({lastRun})", LastValidationReport, ComponentScript);
 
                     if (GUILayout.Button("Validate", GUILayout.Width(100)))
                     {
@@ -132,7 +133,7 @@ namespace WizardsCode.ActionHubEditor
 
                     if (methodInfo != null)
                     {
-                        object[] parameters = new object[] { null, null };
+                        object[] parameters = new object[] { null };
                         bool passed = (bool)methodInfo.Invoke(componentUnderTest, parameters);
 
                         message = (string)parameters[0];

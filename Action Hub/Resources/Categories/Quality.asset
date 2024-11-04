@@ -15,6 +15,6 @@ MonoBehaviour:
   m_DisplayName: Quality
   m_Description: Contains work items to ensure the highest possible quality for the
     project
-  m_SortOrder: 125
+  m_SortOrder: 20
   m_AlwaysShowInHub: 1
   m_MaxActionsToShow: 3

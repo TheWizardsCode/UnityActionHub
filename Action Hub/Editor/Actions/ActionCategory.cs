@@ -58,7 +58,7 @@ namespace WizardsCode.ActionHubEditor
         /// <summary>
         /// Gets the width to use for the content in this GUI.
         /// </summary>
-        protected float Width => ActionHubWindow.ContentWidth;
+        protected float Width => ActionHubWindow.Window.ContentWidth;
 
         bool showAll = false;
 
