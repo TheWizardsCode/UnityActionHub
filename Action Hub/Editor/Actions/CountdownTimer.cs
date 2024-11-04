@@ -84,7 +84,16 @@ namespace WizardsCode.ActionHubEditor
             {
                 if (Time.realtimeSinceStartup > m_EndTime)
                 {
+                    ActionHubWindow.Status.Remove(this);
                     m_IsRunning = false;
+                }
+
+                if (ActionHubWindow.Status.ContainsKey(this))
+                {
+                    ActionHubWindow.Status[this] = $"{(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}";
+                } else
+                {
+                    ActionHubWindow.Status.Add(this, $"{(m_EndTime - Time.realtimeSinceStartup).ToString("F0")}");
                 }
 
                 ActionHubWindow.ForceRepaint();

@@ -16,6 +16,8 @@ namespace WizardsCode.ActionHubEditor
     /// </summary>
     public class ActionHubWindow : EditorWindow
     {
+        public static Dictionary<Action, string> Status = new Dictionary<Action, string>();
+
         public static ActionHubWindow Window;
 
         private List<Action> m_Actions = new List<Action>();
@@ -25,8 +27,6 @@ namespace WizardsCode.ActionHubEditor
         private Vector2 m_MainWindowScrollPosition;
         [SerializeField]
         private int m_MaxRecentItemsToShow = 3;
-        [SerializeField]
-        private int m_MaxFolderItemsToShow = 3;
 
         [SerializeField]
         private List<Object> recentlySelectedItems = new List<Object>();
@@ -247,6 +247,24 @@ namespace WizardsCode.ActionHubEditor
 
         void OnGUI()
         {
+            string title = "Action Hub";
+            string tooltip = "Action Hub Stats:";
+            if (Status.Count > 0)
+            {
+                title += " (";
+                foreach (var item in Status)
+                {
+                    title += $"{item.Value}";
+                    tooltip += $"{item.Key.DisplayName}: {item.Value}";
+                    if (item.Key != Status.Last().Key)
+                    {
+                        title += ", ";
+                    }
+                }
+                title += ")";
+            }
+            titleContent = new GUIContent(title, tooltip);
+
             if (guiSkin != null)
             {
                 GUI.skin = guiSkin;
