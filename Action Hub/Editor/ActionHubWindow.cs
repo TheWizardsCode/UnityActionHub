@@ -36,7 +36,7 @@ namespace WizardsCode.ActionHubEditor
         private static Color m_HeadingBackgroundColour = new Color(0, 0.25f, 0, 1);
         private VisualElement root;
 	    private GUISkin guiSkin;
-	    private string newItemName;
+	    private string newItemName = string.Empty;
 
         float m_Columns = 10;
         public float TotalWidth => position.width;
