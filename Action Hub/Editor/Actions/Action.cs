@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using System;
 using System.Collections;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
@@ -138,14 +137,14 @@ namespace WizardsCode.ActionHubEditor
         }
 
         /// <summary>
-        /// Save the action. Byt default the asset will be saved in `Wizards Code/User Data/Resources/Action Hub`.
+        /// Save the action. Byt default the asset will be saved in `Wizards Code/User Data/Editor/Resources/Action Hub`.
         /// Subclasses can override this method to perform any necessary actions when the action is saved.
         /// Generally this only needs to be called once, when the action is first created. After that the 
         /// Asset Database handles saving the asset.
         /// </summary>
         internal virtual void OnSaveToAssetDatabase()
         {
-            string path = "Assets/Wizards Code/User Data/Resources/Action Hub";
+            string path = "Assets/Wizards Code/User Data/Editor/Resources/Action Hub";
             CreateFoldersRecursively(path);
 
             AssetDatabase.CreateAsset(this, $"{path}/{DisplayName}.asset");
