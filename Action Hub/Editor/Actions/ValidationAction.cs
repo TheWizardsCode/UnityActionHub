@@ -1,4 +1,5 @@
 using NaughtyAttributes;
+using PlasticGui.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using Component = UnityEngine.Component;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace WizardsCode.ActionHubEditor
 {
@@ -17,11 +19,10 @@ namespace WizardsCode.ActionHubEditor
     /// 
     /// Any component will have a number of validation actions that can be performed on it. Some of these are
     /// provided by default, others can be added by the user. In order to add custom validations the user
-    /// should implement the `private void ValidationFailures IsValid()` method. This method should return a
-    /// a ValidationFailures object that contains a list of ValidationFailure's. Each of these objects
-    /// describes a failure in the validation process.
+    /// should implement the `bool IsValid(out string message)` method. This method returns true if
+    /// all tests passed, otherwise it returns the first failure message encountereed.
     /// 
-    /// In addition you can use vlidation attributes from NaughtyAttributes to flag Required fields and to
+    /// In addition you can use validation attributes from NaughtyAttributes to flag Required fields and to
     /// write custom validation rules that will also be used in the Inspector.
     /// </summary>
     [CreateAssetMenu(fileName = "New Validation Action", menuName = "Wizards Code/Action Hub/Validation")]
@@ -31,7 +32,7 @@ namespace WizardsCode.ActionHubEditor
         private MonoScript m_ComponentScript;
 
         private DateTime m_LastValidationTime;
-        private ValidationFailures m_LastValidationFailures;
+        private ValidationFailures m_LastValidationFailures = default;
 
         public MonoScript ComponentScript { get => m_ComponentScript; set => m_ComponentScript = value; }
         public ValidationFailures LastValidationFailures { get => m_LastValidationFailures; set => m_LastValidationFailures = value; }
@@ -46,16 +47,19 @@ namespace WizardsCode.ActionHubEditor
                 }
 
                 StringBuilder sb = new StringBuilder($"Validation report as of {LastValidationTime.ToString("g")}.\n\n");
-                if (!LastValidationFailures.HasFailures)
+                if (LastValidationFailures != null && !LastValidationFailures.HasFailures)
                 {
                     sb.Append($"All {ComponentScript.name} tests passed.");
                 }
                 else
                 {
-                    sb.AppendLine($"There are {LastValidationFailures.Count} prefabs with at least one validation failure, as follows:\n");
-                    foreach (ValidationFailure failure in LastValidationFailures.failures)
+                    if (LastValidationFailures != null)
                     {
-                        sb.AppendLine($"\t{failure.Prefab.name}: {failure.Message}");
+                        sb.AppendLine($"There are {LastValidationFailures.Count} prefabs with at least one validation failure, as follows:\n");
+                        foreach (ValidationFailure failure in LastValidationFailures.failures)
+                        {
+                            sb.AppendLine($"\t{failure.Obj.name}: {failure.Message}");
+                        }
                     }
                 }
 
@@ -94,15 +98,136 @@ namespace WizardsCode.ActionHubEditor
         }
 
         private static ValidationFailures ValidateComponents(MonoScript componentScript)
-        {   
-            ValidationFailures failures = new ValidationFailures();
+        {
+            if (componentScript == null)
+            {
+                throw new ArgumentNullException("componentScript", "Component script must be set.");
+            }
+            if (!componentScript.GetClass().IsSubclassOf(typeof(Component))
+                && !componentScript.GetClass().IsSubclassOf(typeof(ScriptableObject)))
+            {
+                throw new ArgumentException("Component script must be a class that inherits from Component or ScriptableObject.");
+            }
 
+            ValidationFailures failures;
+            int testedCount;
+            if (componentScript.GetClass().IsSubclassOf(typeof(ScriptableObject)))
+            {
+                failures = ValidateScriptableObject(componentScript, out testedCount);
+            }
+            else
+            {
+                failures = ValidateComponent(componentScript, out testedCount);
+            }
+
+            if (failures.HasFailures)
+            {
+                StringBuilder sb = new StringBuilder($"Validation of {componentScript.name} failed with {failures.Count} failures from {testedCount} prefabs. The failures are as follows:\n\n");
+                foreach (ValidationFailure failure in failures.failures)
+                {
+                    sb.AppendLine($"{failure.Obj.name}: {failure.Message}");
+                }
+
+                bool createTodo = EditorUtility.DisplayDialog("Validation Failed", sb.ToString() + "\n\nDo you want to create a ToDo item for each new issue?", "Yes", "No");
+                Debug.LogError(sb.ToString());
+
+                if (createTodo)
+                {
+                    foreach (ValidationFailure failure in failures.failures)
+                    {
+                        string name = $"{failure.Message} - {componentScript.name} on {failure.Obj.name}";
+
+                        ToDoAction action = ScriptableObject.CreateInstance<ToDoAction>();
+                        if (action == null)
+                        {
+                            continue; // don't record a failure twice
+                        }
+
+                        action = CreateInstance<ToDoAction>();
+                        action.name = name;
+                        action.DisplayName = action.name;
+                        action.Description = $"Validation of {componentScript.name} failed for {failure.Obj.name}: \"{failure.Message}\"";
+                        action.Priority = 25;
+                        action.RelatedObject = failure.Obj;
+                        action.Category = Action.ResourceLoad<ActionCategory>("Quality");
+
+                        action.OnSaveToAssetDatabase();
+                    }
+                }
+            }
+            else
+            {
+                string result = $"Validation of {testedCount} prefabs containing {componentScript.name} passed fully.";
+                EditorUtility.DisplayDialog("Validation Passed", result, "OK");
+
+                Debug.Log(result);
+            }
+            return failures;
+        }
+
+        private static ValidationFailures ValidateScriptableObject(MonoScript componentScript, out int testedCount)
+        {
+            ValidationFailures failures = new ValidationFailures();
+            EditorUtility.DisplayProgressBar($"Validating {componentScript.name}", $"Finding ScriptableObjects using {componentScript.name}", 1 / 100f);
+
+            int checkedCount = 0;
+            testedCount = 0;
+
+            Type scriptableObjectType = componentScript.GetClass();
+            if (scriptableObjectType == null)
+            {
+                throw new InvalidOperationException("The class type could not be found from the provided MonoScript.");
+            }
+
+            Object[] scriptableObjects = Resources.LoadAll("", scriptableObjectType);
+            foreach (ScriptableObject so in scriptableObjects)
+            {
+                checkedCount++;
+                EditorUtility.DisplayProgressBar($"Validating {componentScript.name} ({failures.Count} failures so far.)", $"Examining {componentScript.name} ({checkedCount} of {scriptableObjects.Length}, {failures.Count} failures so far.)", checkedCount / scriptableObjects.Length);
+
+                testedCount++;
+
+                Type type = so.GetType();
+
+                if (!ValidateRequiredFields(so, out string message))
+                {
+                    failures.AddFailure(so as Object, message);
+                }
+
+                MethodInfo methodInfo = type.GetMethod("IsValid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+                if (methodInfo != null)
+                {
+                    object[] parameters = new object[] { null };
+                    bool passed = (bool)methodInfo.Invoke(so, parameters);
+
+                    message = (string)parameters[0];
+
+                    if (!passed)
+                    {
+                        failures.AddFailure(so as Object, message);
+                    }
+                }
+                else
+                {
+                    failures.AddFailure(so, $"IsValid method not found for {so} on {so.name}.");
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            return failures;
+        }
+
+        private static ValidationFailures ValidateComponent(MonoScript componentScript, out int testedCount)
+        {
+            ValidationFailures failures = new ValidationFailures();
             EditorUtility.DisplayProgressBar($"Validating {componentScript.name}", $"Finding prefabs using {componentScript.name}", 1 / 100f);
 
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Dev", "Assets/_Marketing", "Assets/_Rogue Wave" });
 
             int checkedCount = 0;
-            int testedCount = 0;
+            testedCount = 0;
             EditorUtility.DisplayProgressBar($"Validating {componentScript.name}", $"Found {guids.Length} prefabs.", checkedCount / guids.Length);
 
             foreach (string guid in guids)
@@ -148,62 +273,20 @@ namespace WizardsCode.ActionHubEditor
 
             EditorUtility.ClearProgressBar();
 
-            if (failures.HasFailures)
-            {
-                StringBuilder sb = new StringBuilder($"Validation of {componentScript.name} failed with {failures.Count} failures from {testedCount} prefabs. The failures are as follows:\n\n");
-                foreach (ValidationFailure failure in failures.failures)
-                {
-                    sb.AppendLine($"{failure.Prefab.name}: {failure.Message}");
-                }
-
-                bool createTodo = EditorUtility.DisplayDialog("Validation Failed", sb.ToString() + "\n\nDo you want to create a ToDo item for each new issue?", "Yes", "No");
-                Debug.LogError(sb.ToString());
-
-                if (createTodo)
-                {
-                    foreach (ValidationFailure failure in failures.failures)
-                    {
-                        string name = $"{failure.Message} - {componentScript.name} on {failure.Prefab.name}";
-
-                        ToDoAction action = ScriptableObject.CreateInstance<ToDoAction>();
-                        if (action == null)
-                        {
-                            continue; // don't record a failure twice
-                        }
-
-                        action = CreateInstance<ToDoAction>();
-                        action.name = name;
-                        action.DisplayName = action.name;
-                        action.Description = $"Validation of {componentScript.name} failed for {failure.Prefab.name}: \"{failure.Message}\"";
-                        action.Priority = 25;
-                        action.RelatedObject = failure.Prefab;
-                        action.Category = Action.ResourceLoad<ActionCategory>("Quality");
-
-                        action.OnSaveToAssetDatabase();
-                    }
-                }
-            }
-            else
-            {
-                string result = $"Validation of {testedCount} prefabs containing {componentScript.name} passed fully.";
-                EditorUtility.DisplayDialog("Validation Passed", result, "OK");
-
-                Debug.Log(result);
-            }
             return failures;
         }
 
-        private static bool ValidateRequiredFields(Component componentUnderTest, out string message)
+        private static bool ValidateRequiredFields(Object objectUnderTest, out string message)
         {
             message = string.Empty;
 
-            FieldInfo[] fields = componentUnderTest.GetType().GetFields();
+            FieldInfo[] fields = objectUnderTest.GetType().GetFields();
             foreach (var field in fields)
             {
                 var required = field.GetCustomAttributes(typeof(RequiredAttribute), true);
                 if (required.Length > 0)
                 {
-                    if (field.GetValue(componentUnderTest) == null)
+                    if (field.GetValue(objectUnderTest) == null)
                     {
                         message = $"Field {field.Name} is required but not set.";
                         return false;
@@ -261,30 +344,30 @@ namespace WizardsCode.ActionHubEditor
                 foreach (ValidationFailure failure in failures)
                 {
                     count++;
-                    sb.AppendLine($"{count.ToString("D3")}. {failure.Prefab.name}: {failure.Message}");
+                    sb.AppendLine($"{count.ToString("D3")}. {failure.Obj.name}: {failure.Message}");
                 }
                 return sb.ToString();
             }
         }
 
-        public void AddFailure(GameObject prefab, string message)
+        public void AddFailure(Object obj, string message)
         {
             if (string.IsNullOrEmpty(message))
             {
                 message = "Validation failed, with no explanation message. The current stack trace is:\n" + new StackTrace(true).ToString();
             }
-            failures.Add(new ValidationFailure(prefab, message));
+            failures.Add(new ValidationFailure(obj, message));
         }
     }
 
     public class ValidationFailure
     {
-        public GameObject Prefab { get; private set; }
+        public Object Obj { get; private set; }
         public string Message { get; private set; }
 
-        public ValidationFailure(GameObject prefab, string message)
+        public ValidationFailure(Object obj, string message)
         {
-            Prefab = prefab;
+            Obj = obj;
             Message = message;
         }
     }
