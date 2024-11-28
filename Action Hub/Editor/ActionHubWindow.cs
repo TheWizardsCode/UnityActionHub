@@ -393,7 +393,7 @@ namespace WizardsCode.ActionHubEditor
 		                                		ToDoAction newAction = ScriptableObject.CreateInstance<ToDoAction>();
 			                                	newAction.name = newItemName;
 			                                	newAction.DisplayName = newAction.name;
-			                                	newAction.RelatedObject = item;
+			                                	newAction.RelatedObjects = new Object[] { item };
 			                                	newAction.Description = "";
 			                                	newAction.Priority = 1000;
 	

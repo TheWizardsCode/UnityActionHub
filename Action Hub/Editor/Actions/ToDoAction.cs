@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -20,14 +21,14 @@ namespace WizardsCode.ActionHubEditor
         [SerializeField, Tooltip("Has this ToDo been completed?")]
         private bool m_IsComplete = false;
         [SerializeField, Tooltip("An optional reference to an object relating to this ToDo item. Users will be able to quickly navigate to this object from the Action Hub.")]
-        private Object m_RelatedObject = null;
+        private Object[] m_RelatedObjects = new Object[0];
 
         internal override bool IncludeInHub => !m_IsComplete;
 
-        public Object RelatedObject
+        public Object[] RelatedObjects
         {
-            get { return m_RelatedObject; }
-            set { m_RelatedObject = value; }
+            get { return m_RelatedObjects; }
+            set { m_RelatedObjects = value; }
         }
 
         private string newItemName;
@@ -39,8 +40,18 @@ namespace WizardsCode.ActionHubEditor
             {
                 ActionHubWindow.CreateClickableLabel(DisplayName, Description, this);
 
-                GUIContent content = new GUIContent("Related to", "A simple reference to an object this ToDo item relates to. Provides easy access for the future.");
-                m_RelatedObject = EditorGUILayout.ObjectField(m_RelatedObject, typeof(Object), false, GUILayout.Width(200));
+                for (int i = 0; i < RelatedObjects.Length; i++)
+                {
+                    RelatedObjects[i] = EditorGUILayout.ObjectField(RelatedObjects[i], typeof(Object), false, GUILayout.Width(150));
+                }
+
+                if (GUILayout.Button("Add Object", GUILayout.Width(100)))
+                {
+                    Array.Resize(ref m_RelatedObjects, m_RelatedObjects.Length + 1);
+                    m_RelatedObjects[m_RelatedObjects.Length - 1] = null;
+                }
+
+                Priority = EditorGUILayout.IntField(Priority, GUILayout.Width(50));
 
                 if (GUILayout.Button("Complete", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {

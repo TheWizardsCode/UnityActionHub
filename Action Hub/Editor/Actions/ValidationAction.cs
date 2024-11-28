@@ -148,7 +148,7 @@ namespace WizardsCode.ActionHubEditor
                         action.DisplayName = action.name;
                         action.Description = $"Validation of {componentScript.name} failed for {failure.Obj.name}: \"{failure.Message}\"";
                         action.Priority = 25;
-                        action.RelatedObject = failure.Obj;
+                        action.RelatedObjects = new Object[] { failure.Obj };
                         action.Category = Action.ResourceLoad<ActionCategory>("Quality");
 
                         action.OnSaveToAssetDatabase();
