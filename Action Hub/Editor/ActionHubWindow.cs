@@ -346,7 +346,13 @@ namespace WizardsCode.ActionHubEditor
                     EditorGUILayout.BeginHorizontal();
                     {
                         GUILayout.FlexibleSpace();
-                        MaxRecentItemsToShow = EditorGUILayout.IntField(MaxRecentItemsToShow, GUILayout.Width(25));
+                        // MaxRecentItemsToShow = EditorGUILayout.IntField(MaxRecentItemsToShow, GUILayout.Width(25));
+
+                        if (GUILayout.Button("3", GUILayout.Width(30)))
+                        {
+                            MaxRecentItemsToShow = 3;
+                        }
+
                         if (MaxRecentItemsToShow < recentlySelectedItems.Count && GUILayout.Button("All", GUILayout.Width(30)))
                         {
                             MaxRecentItemsToShow = recentlySelectedItems.Count;

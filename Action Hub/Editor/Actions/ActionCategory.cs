@@ -96,14 +96,14 @@ namespace WizardsCode.ActionHubEditor
 
                         if (showAll)
                         {
-                            if (GUILayout.Button($"Show {m_MaxActionsToShow}", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
+                            if (GUILayout.Button($"{m_MaxActionsToShow}"))
                             {
                                 showAll = false;
                             }
                         } 
                         else if (toShow < activeActions.Count)
                         {
-                            if (GUILayout.Button("Expand", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
+                            if (GUILayout.Button("All"))
                             {
                                 showAll = true;
                             }
