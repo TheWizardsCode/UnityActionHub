@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using PlasticGui.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -194,11 +193,11 @@ namespace WizardsCode.ActionHubEditor
                     failures.AddFailure(so as Object, message);
                 }
 
-                MethodInfo methodInfo = type.GetMethod("IsValid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
+                //MethodInfo methodInfo = type.GetMethod("IsValid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                MethodInfo methodInfo = FindExtensionMethod(type, "IsValid");
                 if (methodInfo != null)
                 {
-                    object[] parameters = new object[] { null };
+                    object[] parameters = new object[] { so };
                     bool passed = (bool)methodInfo.Invoke(so, parameters);
 
                     message = (string)parameters[0];
@@ -217,6 +216,30 @@ namespace WizardsCode.ActionHubEditor
             EditorUtility.ClearProgressBar();
 
             return failures;
+        }
+
+        private static MethodInfo FindExtensionMethod(Type extendedType, string methodName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    if (type.IsSealed && !type.IsGenericType && !type.IsNested)
+                    {
+                        foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                        {
+                            if (method.IsDefined(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false))
+                            {
+                                if (method.GetParameters()[0].ParameterType == extendedType && method.Name == methodName)
+                                {
+                                    return method;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         private static ValidationFailures ValidateComponent(MonoScript componentScript, out int testedCount)
