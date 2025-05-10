@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Scene
   m_EditorClassIdentifier: 
   m_DisplayName: Scene
-  m_Description: A colleftion of actions relating to specific scenes.
+  m_Description: A collection of actions for working with scenes.
   m_SortOrder: 100
   m_AlwaysShowInHub: 1
   m_MaxActionsToShow: 3

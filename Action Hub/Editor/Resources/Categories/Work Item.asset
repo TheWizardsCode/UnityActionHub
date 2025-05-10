@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Work Item
   m_EditorClassIdentifier: 
   m_DisplayName: Work Items (Generic)
-  m_Description: A category foir all work items that are not assigned to a specific
-    deliverable.
+  m_Description: A category for all work items that are not assigned to a specific
+    category.
   m_SortOrder: 50
   m_AlwaysShowInHub: 1
   m_MaxActionsToShow: 3

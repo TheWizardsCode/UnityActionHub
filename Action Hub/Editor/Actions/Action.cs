@@ -75,8 +75,8 @@ namespace WizardsCode.ActionHubEditor
         }
 
         /// <summary>
-        /// Subclasses can implement this method to render the custom GUI for the action. Under normal circumstances it will be rendered by the
-        /// OnGUI() method which will add the OnEngGUI() after the custom GUI.
+        /// Subclasses can implement this method to render a custom GUI for the action. Under normal circumstances it will be rendered by the
+        /// OnGUI() method which will also call OnEndGUI() after the custom GUI.
         /// </summary>
         protected virtual void OnCustomGUI()
         {

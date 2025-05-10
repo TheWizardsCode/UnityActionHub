@@ -1,8 +1,4 @@
-using NaughtyAttributes;
-using NUnit.Framework;
-using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace WizardsCode.ActionHubEditor
@@ -22,13 +18,13 @@ namespace WizardsCode.ActionHubEditor
         [SerializeField, TextArea(2, 5), Tooltip("A description of the category, for displaying in tooltips and detailed views of the category.")]
         private string m_Description = "This category has not been given a description yet.";
 
-        [SerializeField, Tooltip("The sort order of this category. Lower numbers appear first.")]
+        [SerializeField, Tooltip("The sort order of this category. Lower numbers appear first in the list of categories in the Action Hub UI.")]
         private int m_SortOrder = 1000;
 
         [SerializeField, Tooltip("If this is true then this category will always be shown in the Action Hub, even if there are no actions associated with it. This is useful when the category provides a means for creating new actions from its GUI.")]
         private bool m_AlwaysShowInHub = false;
 
-        [SerializeField, Tooltip("The maximum number of actions to show in the hub.")]
+        [SerializeField, Tooltip("The maximum number of actions to show in the hub by default. If there are more actions than this, a button will be shown to show all actions.")]
         private int m_MaxActionsToShow = 3;
 
         /// <summary>
@@ -62,8 +58,11 @@ namespace WizardsCode.ActionHubEditor
         /// </summary>
         /// <param name="activeActions">The list of active actions.</param>
         /// <param name="activeTemplates">The list of active templates.</param>
-        public void ActionListGUI(List<Action> activeActions, List<Action> activeTemplates)
+        public virtual void ActionListGUI(List<Action> activeActions, List<Action> activeTemplates)
         {
+            Sort(ref activeActions);
+            Sort(ref activeTemplates);
+
             int toShow = 0;
             if (showAll)
             {
@@ -88,11 +87,11 @@ namespace WizardsCode.ActionHubEditor
             {
                 GUILayout.BeginVertical();
                 {
-                    GUILayout.BeginHorizontal();
+                    GUILayout.BeginHorizontal(); // Show title bar, description as tooltip and button to show more or fewer actions
                     {
                         string showing = activeActions.Count > m_MaxActionsToShow ? $"Showing {m_MaxActionsToShow} of {activeActions.Count} actions" : $"{activeActions.Count} actions";
-                        string label = $"{DisplayName} - {showing}";
-                        ActionHubWindow.CreateSectionHeading(label, Description);
+                        string title = $"{DisplayName} - {showing}";
+                        ActionHubWindow.CreateSectionHeading(title, Description);
 
                         if (showAll)
                         {
@@ -140,6 +139,31 @@ namespace WizardsCode.ActionHubEditor
                 GUILayout.EndVertical();
             }
             GUILayout.EndVertical();
+        }
+
+        void Sort(ref List<Action> actions) {
+            
+            actions.Sort((a, b) =>
+            {
+                int priorityComparison = a.Priority.CompareTo(b.Priority);
+                if (priorityComparison != 0)
+                {
+                    return priorityComparison;
+                }
+
+                if (a == null || b == null)
+                {
+                    return 0;
+                }
+
+                int nameComparison = a.DisplayName.CompareTo(b.DisplayName);
+                if (nameComparison != 0)
+                {
+                    return nameComparison;
+                }
+
+                return 0;
+            });
         }
     }
 }

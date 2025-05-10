@@ -50,9 +50,6 @@ namespace WizardsCode.ActionHubEditor
         }
         float ItemHeight => EditorGUIUtility.singleLineHeight;
 
-        /// <summary>
-        /// Called when the window is enabled. This is used to register for events and initialise the data.
-        /// </summary>
         private void OnEnable()
         {
             root = rootVisualElement;
@@ -66,15 +63,12 @@ namespace WizardsCode.ActionHubEditor
             m_DefaultCategory = ResourceLoad<ActionCategory>("Default");
             if (m_DefaultCategory == null)
             {
-                Debug.LogError("Default category not found!");
+            Debug.LogError("Default category not found!");
             }
 
             Window = this;
         }
-
-        /// <summary>
-        /// Called when the window is disabled. This is used to unregister for events.
-        /// </summary>    
+ 
         private void OnDisable()
         {
             Selection.selectionChanged -= OnSelectionChanged;
@@ -87,7 +81,7 @@ namespace WizardsCode.ActionHubEditor
         }
 
         /// <summary>
-        /// A handler for the OnSelectionChanged event. This is used to record the last 10 items and folders that were selected.
+        /// Record the last 10 items and folders that were selected.
         /// These are then displayed in the Action Hub window for easy access.
         /// </summary>
         private void OnSelectionChanged()
@@ -178,7 +172,7 @@ namespace WizardsCode.ActionHubEditor
         /// Actions are items that the user is working with.
         /// Action Templates define what the user can create in the Action Hub, and where.
         /// 
-        /// Action Templates are instances of an Action Scriptable Object (or subclas) with default settings.
+        /// Action Templates are instances of an Action Scriptable Object (or subclass) with default settings.
         /// One of these default settings is the category that the Action belongs to. This is used to determine
         /// where to place the Create UI for the Action in the Action Hub. That is, the create UI will be
         /// placed in the category that the Action Template is assigned to.
@@ -208,31 +202,9 @@ namespace WizardsCode.ActionHubEditor
             {
                 categorySortOrder[category.DisplayName] = category.SortOrder;
             }
-            
-            // Sort actions by priority, then by name, and then by category sort order
-            m_Actions.Sort((a, b) =>
-            {
-                int priorityComparison = a.Priority.CompareTo(b.Priority);
-                if (priorityComparison != 0)
-                {
-                    return priorityComparison;
-                }
 
-                int nameComparison = a.DisplayName.CompareTo(b.DisplayName);
-                if (nameComparison != 0)
-                {
-                    return nameComparison;
-                }
-
-                string categoryAName = a.Category?.DisplayName ?? m_DefaultCategory.DisplayName;
-                string categoryBName = b.Category?.DisplayName ?? m_DefaultCategory.DisplayName;
-
-                int categoryAOrder = categorySortOrder.ContainsKey(categoryAName) ? categorySortOrder[categoryAName] : int.MaxValue;
-                int categoryBOrder = categorySortOrder.ContainsKey(categoryBName) ? categorySortOrder[categoryBName] : int.MaxValue;
-
-                return categoryAOrder.CompareTo(categoryBOrder);
-            });
-
+            // find the Action Templates and store them in the ActionTemplates list
+            // remove them from the Actions list
             for (int i = m_Actions.Count - 1; i >= 0; i--)
             {
                 if (m_Actions[i].name.ToLower().EndsWith("template"))
@@ -281,6 +253,21 @@ namespace WizardsCode.ActionHubEditor
                 ActionCategoriesGUI();
             }
             GUILayout.EndScrollView();
+
+            // Add a right click option to reload the data 
+            if (Event.current.type == EventType.ContextClick)
+            {
+                GenericMenu menu = new GenericMenu();
+
+                menu.AddItem(new GUIContent("Refresh Data"), false, () => LoadAllData());
+                //menu.AddItem(new GUIContent("Option 2"), false, () => Debug.Log("Option 2 selected"));
+                //menu.AddSeparator(""); // Add a separator
+                //menu.AddItem(new GUIContent("Option 3"), false, () => Debug.Log("Option 3 selected"));
+
+                menu.ShowAsContext();
+
+                Event.current.Use();
+            }
         }
 
         private void RecentlySelectedGUI()
@@ -425,12 +412,12 @@ namespace WizardsCode.ActionHubEditor
 
         private void ActionCategoriesGUI()
         {
-            List<Action> createAllowed = new List<Action>();
+            List<Action> templates = new List<Action>();
             List<Action> categoryActions = new List<Action>();
 
             foreach (ActionCategory category in m_Categories)
             {
-                createAllowed.Clear();
+                templates.Clear();
                 categoryActions.Clear();
 
                 // Find all the actions templates that allow creation in this category
@@ -438,7 +425,7 @@ namespace WizardsCode.ActionHubEditor
                 {
                     if (action.Category == category)
                     {
-                        createAllowed.Add(action);
+                        templates.Add(action);
                     }
                 }
 
@@ -453,9 +440,9 @@ namespace WizardsCode.ActionHubEditor
                 }
 
                 // If there are actions in this category, or the category is always shown in the hub, or there are actions that can be created in this category display the category UI
-                if (categoryActions.Count > 0 || category.AlwaysShowInHub || createAllowed.Count > 0)
+                if (categoryActions.Count > 0 || category.AlwaysShowInHub || templates.Count > 0)
                 {
-                    category.ActionListGUI(categoryActions, createAllowed);
+                    category.ActionListGUI(categoryActions, templates);
                 }
             }
         }
@@ -500,6 +487,12 @@ namespace WizardsCode.ActionHubEditor
         /// </summary>
         internal static void CreateClickableLabel(string text, string tooltip, Object obj, bool showIcon = true, params GUILayoutOption[] options)
         {
+            if (obj == null) // sometimes an object has been deleted
+            {
+                Debug.LogWarning($"Object {text} has been deleted or is otherwise null.");  
+                return;
+            }
+
             GUIContent content = new GUIContent(text, tooltip);
 
             if (showIcon)

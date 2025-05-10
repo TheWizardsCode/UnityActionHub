@@ -13,8 +13,9 @@ using Object = UnityEngine.Object;
 namespace WizardsCode.ActionHubEditor
 {
     /// <summary>
-    /// An Action that performs a validation task. Each of these actions has a list of components that they are 
-    /// to validate. The action will then check each of these components and report back on their validity.
+    /// An Action that performs a validation task. Each of these actions Mono Script that they are 
+    /// to validate. The action will discover all assets using the script and check each of them 
+    /// against a set of tests, reporting back on their validity.
     /// 
     /// Any component will have a number of validation actions that can be performed on it. Some of these are
     /// provided by default, others can be added by the user. In order to add custom validations the user
