@@ -51,7 +51,7 @@ namespace WizardsCode.ActionHubEditor
                     m_RelatedObjects[m_RelatedObjects.Length - 1] = null;
                 }
 
-                Priority = EditorGUILayout.IntField(Priority, GUILayout.Width(50));
+                Priority = EditorGUILayout.DelayedIntField(Priority, GUILayout.Width(50));
 
                 if (GUILayout.Button("Complete", GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
                 {
