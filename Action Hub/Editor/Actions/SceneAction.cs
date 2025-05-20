@@ -108,7 +108,7 @@ namespace WizardsCode.ActionHubEditor
             }
 
             EditorGUI.BeginDisabledGroup(SceneManager.sceneCount == 1);
-            if (GUILayout.Button(new GUIContent("Remove", "Remove the scene from the currently listed scenes. Only available if there is more than one scene currently loaded."), GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
+            if (GUILayout.Button(new GUIContent("Close", "Remove the scene from the currently loaded scenes. Only available if there is more than one scene currently loaded."), GUILayout.Width(ActionHubWindow.Window.ActionButtonWidth)))
             {
                 Scene scene = SceneManager.GetSceneByPath(scenePath);
                 if (scene.IsValid())
